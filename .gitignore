@@ -1,0 +1,21 @@
+# env
+venv/
+.env
+
+# python cache
+__pycache__/
+*.pyc
+
+# logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# system
+.DS_Store
+
+# test/build
+build/
+dist/
