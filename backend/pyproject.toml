@@ -1,0 +1,30 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiomysql==0.3.2",
+    "alembic==1.18.4",
+    "annotated-types==0.7.0",
+    "asgiref==3.11.1",
+    "blinker==1.9.0",
+    "click==8.4.1",
+    "colorama==0.4.6",
+    "flask==3.1.3",
+    "greenlet==3.5.2",
+    "itsdangerous==2.2.0",
+    "jinja2==3.1.6",
+    "mako==1.3.12",
+    "markupsafe==3.0.3",
+    "pydantic==2.13.4",
+    "pydantic-core==2.46.4",
+    "pydantic-settings==2.14.2",
+    "pymysql==1.2.0",
+    "python-dotenv==1.2.2",
+    "sqlalchemy==2.0.51",
+    "typing-extensions==4.15.0",
+    "typing-inspection==0.4.2",
+    "werkzeug==3.1.8",
+]
