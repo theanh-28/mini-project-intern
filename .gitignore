@@ -1,6 +1,8 @@
 # env
 venv/
+.venv/
 .env
+.env.docker
 
 # python cache
 __pycache__/

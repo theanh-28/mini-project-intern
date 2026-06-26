@@ -19,10 +19,7 @@ from app.models import *
 # access to the values within the .ini file in use.
 config = context.config
 
-# alembic không hỗ trợ async driver (aiomysql) -> dùng sync (pymysql) khi chạy migration
-sync_db_url = settings.database_url.replace("aiomysql", "pymysql")
-
-config.set_main_option("sqlalchemy.url", sync_db_url)
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
