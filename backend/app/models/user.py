@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 
 from app.db.base import Base
 
+# Khai báo model User
 class User(Base):
     __tablename__ = "users"
 
