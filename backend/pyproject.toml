@@ -8,6 +8,7 @@ dependencies = [
     "alembic==1.18.4",
     "annotated-types==0.7.0",
     "asgiref==3.11.1",
+    "bcrypt>=5.0.0",
     "blinker==1.9.0",
     "click==8.4.1",
     "colorama==0.4.6",
@@ -18,13 +19,21 @@ dependencies = [
     "jinja2==3.1.6",
     "mako==1.3.12",
     "markupsafe==3.0.3",
-    "pydantic==2.13.4",
+    "pydantic[email]==2.13.4",
     "pydantic-core==2.46.4",
     "pydantic-settings==2.14.2",
     "pymysql==1.2.0",
     "python-dotenv==1.2.2",
+    "python-jose[cryptography]>=3.5.0",
     "sqlalchemy==2.0.51",
     "typing-extensions==4.15.0",
     "typing-inspection==0.4.2",
     "werkzeug==3.1.8",
+]
+
+[dependency-groups]
+dev = [
+    "freezegun>=1.5.5",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
 ]
