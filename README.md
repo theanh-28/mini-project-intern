@@ -49,6 +49,7 @@ mini-project-intern/
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
 | GET    | /        | Hello World |
+| POST   | /auth/login | Xác thực thông tin người dùng và trả về JWT Access Token |
 
 ## Biến môi trường
 | Biến | Mô tả | Ví dụ |
@@ -61,3 +62,15 @@ mini-project-intern/
 | MYSQL_ROOT_PASSWORD | Mật khẩu root của container MySQL (cần khớp với `DB_PASSWORD`) | 123456 |
 | MYSQL_DATABASE | Tên database khởi tạo trong container MySQL (cần khớp với `DB_NAME`) | intern_project |
 | DEBUG | Chế độ debug của ứng dụng | True |
+| SECRET_KEY | Mã khóa bí mật dùng để ký và xác thực JWT token | 0579d42672f0... |
+| ALGORITHM | Thuật toán mã hóa JWT token | HS256 |
+| ACCESS_TOKEN_EXPIRE_MINUTES | Thời gian hết hạn của Access Token (phút) | 60 |
+
+## Chạy Kiểm thử (Testing)
+Dự án được tích hợp sẵn các bài test đơn vị (Unit Test) và test tích hợp (Integration Test) sử dụng thư viện `pytest` và `freezegun`.
+
+Để chạy toàn bộ các bài test, di chuyển vào thư mục `backend` và chạy lệnh:
+```bash
+cd backend
+uv run pytest -v -s
+```

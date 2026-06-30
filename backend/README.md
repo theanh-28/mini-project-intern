@@ -35,10 +35,38 @@ uv run python -m app.main
 ---
 
 ## 📁 Phân lớp thư mục `app/`
-* `api/`: API Endpoints/Routes.
 * `core/`: Cấu hình hệ thống (`config.py`).
-* `db/`: Kết nối DB (`base.py`).
+* `db/`: Kết nối DB (`base.py`, `session.py`).
 * `models/`: Khai báo SQLAlchemy Models.
 * `repositories/`: Truy vấn CSDL.
+* `routes/`: Định nghĩa các API Endpoints/Routes.
 * `schemas/`: Pydantic Schemas (Request/Response).
 * `services/`: Xử lý logic nghiệp vụ.
+
+---
+
+## 🧪 Kiểm thử (Testing)
+
+Dự án được viết test toàn diện sử dụng **`pytest`**, **`pytest-mock`**, và **`freezegun`**.
+
+### 1. Phân loại các bài test có sẵn
+* **Unit Tests (Kiểm thử đơn vị):**
+  * `tests/unit/test_security.py`: Kiểm thử các hàm bảo mật (băm mật khẩu, kiểm tra mật khẩu, mã hóa và giải mã JWT token).
+  * `tests/unit/test_user_service.py`: Kiểm thử logic nghiệp vụ xác thực người dùng trong `UserService` sử dụng mock repository (Factory Fixture).
+  * `tests/unit/test_user_repository.py`: Kiểm thử các câu lệnh truy vấn của `UserRepository` trực tiếp trên database **SQLite In-Memory** để đảm bảo độc lập và tốc độ cực nhanh.
+* **Integration Tests (Kiểm thử tích hợp):**
+  * `tests/integration/test_auth_routes.py`: Kiểm thử tích hợp toàn bộ luồng đăng nhập của API `/auth/login` (POST) bằng Flask Test Client (mã trạng thái 200, 400, 401, 403) và SQLite test database.
+
+### 2. Hướng dẫn chạy test
+Tại thư mục `/backend` chạy:
+
+```bash
+# Chạy toàn bộ các bài test
+uv run pytest
+
+# Chạy test hiển thị log chi tiết
+uv run pytest -v -s
+
+# Chỉ chạy các unit test
+uv run pytest tests/unit/
+```
