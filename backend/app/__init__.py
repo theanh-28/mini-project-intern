@@ -1,4 +1,5 @@
 from flask import Flask, g
+
 from app.core.config import settings
 
 def create_app():
@@ -11,7 +12,12 @@ def create_app():
     # Cấu hình ứng dụng
     app.config['DEBUG'] = settings.debug
 
+    # Đăng ký before_request 
+    from app.core.hook import login_required
     
+    app.before_request(login_required)
+
+
     # teardown db
     @app.teardown_appcontext
     def close_db(error=None):

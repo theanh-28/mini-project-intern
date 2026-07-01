@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
 
+    # --- redis ---
+    redis_host: str
+    redis_port: int
+    redis_db: int
+
     # --- database url ---
     @property
     def database_url(self) -> str:

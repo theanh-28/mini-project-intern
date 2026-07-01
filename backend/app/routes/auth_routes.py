@@ -1,6 +1,6 @@
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from pydantic import ValidationError
 from datetime import datetime, timezone
 
@@ -8,7 +8,9 @@ from app.schemas.auth import LoginRequest, LoginResponse
 from app.db.session import get_db
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
-from app.core.security import create_access_token
+from app.core.security import create_access_token, decode_access_token
+from app.services.redis_service import redis_service
+from app.core.hook import login_required  
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -43,7 +45,32 @@ def login():
     return jsonify(response_data.model_dump()), 200
 
 
+@auth_bp.route('/auth/logout', methods=['POST'])
+def logout():
+    try:
+        # Lây thông tin payload từ g object đã lưu trong login_required()
+        payload = g.get("current_user")
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+        
+        # Tính TTL còn lại bằng giây
+        now = datetime.now(timezone.utc).timestamp()
+        ttl = int(exp - now)
+        
+        # Nếu token vẫn chưa hết hạn thì cho vào blacklist
+        if ttl > 0:
+            redis_service.blacklist_token(jti, ttl)
 
+        logger.info(f"User logged out: id={payload.get('sub')}")
+            
+        return jsonify({"message": "Đăng xuất thành công"}), 200
+        
+    except Exception as e:
+        # Lỗi trong quá trình xử lý logout (redis service)
+        logger.error(f"Lỗi xư lý bên server khi logout: {str(e)}")
+
+        # Nếu có lỗi, vẫn trả về thành công để bên client xóa token
+        return jsonify({"message": "Đăng xuất thành công"}), 200
 
          
 
