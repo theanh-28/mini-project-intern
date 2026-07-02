@@ -13,6 +13,15 @@ def insert_user(db_session, user_example):
 
     return user_example
 
+@pytest.fixture
+def insert_admin(db_session, admin_example):
+    """
+    Thêm admin_example vào db
+    """
+    db_session.add(admin_example)
+    db_session.commit()
+    return admin_example
+
 def test_login_when_credentials_is_valid_return_200_and_token(client, insert_user):
     """
     Trường hợp xác thực thành công
@@ -32,26 +41,15 @@ def test_login_when_credentials_is_valid_return_200_and_token(client, insert_use
     assert 'access_token' in data
     assert data['is_admin'] is False
 
-def test_login_when_user_is_admin_return_200_and_is_admin_true(client, db_session):
+def test_login_when_user_is_admin_return_200_and_is_admin_true(client, insert_admin):
     """
     Trường hợp admin login thành công, kiểm tra is_admin=True trong response
     """
-    admin_user = User(
-        user_id=2,
-        name="admin_user",
-        email="admin@example.com",
-        password=hash_password("123456"),
-        is_active=True,
-        is_admin=True
-    )
-    
-    db_session.add(admin_user)
-    db_session.commit()
 
     response = client.post(
         '/auth/login',
         json={
-            'email': 'admin@example.com',
+            'email': insert_admin.email,
             'password': '123456'
         }
     )
@@ -63,10 +61,10 @@ def test_login_when_user_is_admin_return_200_and_is_admin_true(client, db_sessio
     assert data['is_admin'] is True
 
 
-def test_login_when_email_is_incorrect_return_401(client):
+def test_login_when_email_is_incorrect_return_404(client):
     """
     Trường hợp xác thực thất bại vì email sai
-    Trả về status code 401
+    Trả về status code 404
     """
     response = client.post(
         '/auth/login',
@@ -76,7 +74,7 @@ def test_login_when_email_is_incorrect_return_401(client):
         }
     )
 
-    assert response.status_code == 401
+    assert response.status_code == 404
 
 def test_login_when_password_is_incorrect_return_401(client, insert_user):
     """

@@ -9,7 +9,7 @@ from app.core.security import create_access_token
 from app.services.redis_service import redis_service
 from app.services.user_service import get_user_service
 from app.core.security import create_access_token
-
+from app.core.exceptions import AuthException
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -17,16 +17,17 @@ logger = logging.getLogger(__name__)
 @auth_bp.route('/auth/login', methods=['POST'])
 def login():
     try:
-        data = LoginRequest(**request.json)
+        data = LoginRequest(**(request.json or {}))
     except ValidationError as e:
         return jsonify({"error": e.errors()}), 400
     
     user_service = get_user_service()
-    user, error = user_service.auth_user(data.email, data.password)
-
-    if not user:
-        status_code = 403 if error == "Tài khoản đang bị khóa" else 401
-        return jsonify({'error': error}), status_code
+    
+    try:
+        user = user_service.auth_user(data.email, data.password)
+    except AuthException as e:
+        logger.error("Authentication failed: %s", str(e))
+        return jsonify({"error": str(e), "code": e.code_error}), e.status_code
 
     access_token = create_access_token(user.user_id, user.is_admin)
     logger.info("User logged in: id=%s, is_admin=%s", user.user_id, user.is_admin)
