@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -6,7 +8,6 @@ from app.models import User
 from app.core.security import hash_password, create_access_token
 from app.db.base import Base
 from app import create_app
-from app.routes import auth_routes
 
 @pytest.fixture
 def user_example():
@@ -17,7 +18,8 @@ def user_example():
         user_id=1,
         name="user_1",
         email="user_1@example.com",
-        password=hash_password("123456")
+        password=hash_password("123456"),
+        is_active=True
     )
 
 @pytest.fixture
@@ -59,16 +61,17 @@ def app(db_session):
     Khởi tạo app Flask câu hình ở chế độ Testing
     """
 
-    app = create_app()
-    app.config.update({
+    app_instance = create_app()
+    app_instance.config.update({
         "TESTING": True
     })
 
     # Ghi đè get_db() bằng db_session để trả về session làm việc với SQLite trong RAM
     # Tránh kết nối DB thật khi test
-    auth_routes.get_db = lambda: db_session
+    import app.db.session as session_module
+    session_module.get_db = lambda: db_session
 
-    yield app
+    yield app_instance
 
 @pytest.fixture
 def client(app):
