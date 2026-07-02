@@ -2,9 +2,10 @@ import logging
 
 from flask import Blueprint, request, jsonify, g
 from pydantic import ValidationError
+from datetime import datetime, timezone
 
 from app.schemas.auth import LoginRequest, LoginResponse
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import create_access_token
 from app.services.redis_service import redis_service
 from app.services.user_service import get_user_service
 from app.core.security import create_access_token
