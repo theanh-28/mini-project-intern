@@ -23,6 +23,20 @@ def user_example():
     )
 
 @pytest.fixture
+def admin_example():
+    """
+    Admin seed
+    """
+    return User(
+        user_id=2,
+        name="admin_1",
+        email="admin_1@example.com",
+        password=hash_password("123456"),
+        is_active=True,
+        is_admin=True
+    )
+
+@pytest.fixture
 def access_token(user_example):
     """
     Tạo access token

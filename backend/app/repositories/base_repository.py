@@ -5,7 +5,7 @@ class BaseRepository:
         self.db = db
     
     def get_by_id(self, id):
-        return self.db.query(self.model).filter(self.model.id == id).first()
+        return self.db.get(self.model, id)
     
     def get_page(self, page:int = 1, limit: int = 100):
         skip = (page - 1) * limit

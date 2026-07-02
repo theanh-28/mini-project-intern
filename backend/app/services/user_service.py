@@ -1,4 +1,5 @@
 from app.core.security import verify_password
+from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
 
 
 class UserService:
@@ -12,17 +13,17 @@ class UserService:
         """
         user = self.user_repository.get_by_email(email)
         if not user:
-            return None, "Email không tồn tại"
+            raise EmailNotFoundError("Email không tồn tại")
         
         if not verify_password(password, user.password):
-            return None, "Sai mật khẩu"
+            raise WrongPasswordError("Mật khẩu không đúng")
         
         if not user.is_active:
-            return None, "Tài khoản đang bị khóa"
+            raise AccountLockedError("Tài khoản đang bị khóa")
             
         self.user_repository.update_last_login(user)
         self.user_repository.commit()
-        return user, None
+        return user
     
 def get_user_service() -> UserService:
     from app.repositories.user_repository import get_user_repository
