@@ -15,7 +15,6 @@ def test_create_access_token_contains_jti(access_token):
     assert 'jti' in payload, "Payload không chứa jti"
     assert payload['jti'] is not None, "jti nhận None"
 
-
 def test_create_access_token_expires_1h(user_example):
     """
     Kiểm tra expiry 1h

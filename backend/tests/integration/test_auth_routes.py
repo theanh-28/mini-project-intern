@@ -15,8 +15,8 @@ def insert_user(db_session, user_example):
 
 def test_login_when_credentials_is_valid_return_200_and_token(client, insert_user):
     """
-    Trường hợp xác thực thông công
-    Trả và status code 200 và jwt đúng
+    Trường hợp xác thực thành công
+    Trả về status code 200 và jwt đúng
     """
     response = client.post(
         '/auth/login',
@@ -31,6 +31,37 @@ def test_login_when_credentials_is_valid_return_200_and_token(client, insert_use
     assert response.status_code == 200
     assert 'access_token' in data
     assert data['is_admin'] is False
+
+def test_login_when_user_is_admin_return_200_and_is_admin_true(client, db_session):
+    """
+    Trường hợp admin login thành công, kiểm tra is_admin=True trong response
+    """
+    admin_user = User(
+        user_id=2,
+        name="admin_user",
+        email="admin@example.com",
+        password=hash_password("123456"),
+        is_active=True,
+        is_admin=True
+    )
+    
+    db_session.add(admin_user)
+    db_session.commit()
+
+    response = client.post(
+        '/auth/login',
+        json={
+            'email': 'admin@example.com',
+            'password': '123456'
+        }
+    )
+
+    data = response.get_json()
+    
+    assert response.status_code == 200
+    assert 'access_token' in data
+    assert data['is_admin'] is True
+
 
 def test_login_when_email_is_incorrect_return_401(client):
     """
@@ -103,3 +134,32 @@ def test_login_when_user_is_inactive_return_403(client, db_session):
     )
 
     assert response.status_code == 403
+
+def test_login_when_no_body_return_400(client):
+    """
+    Trường hợp gửi request login không có body (JSON payload)
+    """
+    response = client.post(
+        '/auth/login',
+        headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == 400
+
+
+def test_login_updates_last_login_in_db(client, db_session, insert_user):
+    """
+    Trường hợp login thành công, verify last_login trong database được cập nhật
+    """
+    assert insert_user.last_login is None
+
+    response = client.post(
+        '/auth/login',
+        json={
+            'email': insert_user.email,
+            'password': '123456'
+        }
+    )
+    assert response.status_code == 200
+
+    db_session.refresh(insert_user)
+    assert insert_user.last_login is not None
