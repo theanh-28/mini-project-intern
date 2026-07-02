@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from app.schemas.auth import LoginRequest, LoginResponse
 from app.core.security import create_access_token
-from app.services.redis_service import redis_service
 from app.services.user_service import get_user_service
 from app.core.security import create_access_token
 from app.core.exceptions import AuthException
@@ -43,25 +42,19 @@ def logout():
         payload = g.get("current_user")
         jti = payload.get("jti")
         exp = payload.get("exp")
+        user_id = payload.get("sub")
         
-        # Tính TTL còn lại bằng giây
-        now = datetime.now(timezone.utc).timestamp()
-        ttl = int(exp - now)
-        
-        # Nếu token vẫn chưa hết hạn thì cho vào blacklist
-        if ttl > 0:
-            redis_service.blacklist_token(jti, ttl)
+        user_service = get_user_service()
+        user_service.logout_user(jti, exp)
 
-        logger.info(f"User logged out: id={payload.get('sub')}")
-            
-        return jsonify({"message": "Đăng xuất thành công"}), 200
-        
+        logger.info(f"User logged out: id={user_id}")
+                   
     except Exception as e:
         # Lỗi trong quá trình xử lý logout (redis service)
         logger.error(f"Lỗi xư lý bên server khi logout: {str(e)}")
 
-        # Nếu có lỗi, vẫn trả về thành công để bên client xóa token
+    finally:
+        # Nếu có lỗi thì vẫn trả về 200 để client xóa token khỏi local storage
         return jsonify({"message": "Đăng xuất thành công"}), 200
-
          
 

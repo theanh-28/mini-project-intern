@@ -17,4 +17,4 @@ class UserRepository(BaseRepository):
 
 def get_user_repository() -> UserRepository:
     from app.db.session import get_db
-    return UserRepository(get_db())
+    return UserRepository(get_db)   # Truyền hàm get_db không gọi

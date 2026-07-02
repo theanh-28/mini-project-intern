@@ -2,7 +2,13 @@
 class BaseRepository:
     def __init__(self, model, db):
         self.model = model
-        self.db = db
+        self._db = db
+
+    @property
+    def db(self):
+        if callable(self._db):
+            return self._db()
+        return self._db
     
     def get_by_id(self, id):
         return self.db.get(self.model, id)

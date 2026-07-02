@@ -1,10 +1,13 @@
+from datetime import datetime, timezone
+
 from app.core.security import verify_password
 from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
 
 
 class UserService:
-    def __init__(self, user_repository):
+    def __init__(self, user_repository, redis_service):
         self.user_repository = user_repository
+        self.redis_service = redis_service
 
     def auth_user(self, email: str, password: str):
         """
@@ -25,7 +28,20 @@ class UserService:
         self.user_repository.commit()
         return user
     
+    def logout_user(self, jti: str, exp: int):
+        """
+        Thêm token vào blacklist trong Redis nếu chưa hết hạn.
+        """
+        # Tính TTL còn lại bằng giây
+        now = datetime.now(timezone.utc).timestamp()
+        ttl = int(exp - now)
+        
+        # Nếu token vẫn chưa hết hạn thì cho vào blacklist
+        if ttl > 0:
+            self.redis_service.blacklist_token(jti, ttl)
+    
 def get_user_service() -> UserService:
     from app.repositories.user_repository import get_user_repository
-    return UserService(get_user_repository())
+    from app.services.redis_service import redis_service
+    return UserService(get_user_repository(), redis_service=redis_service)
 

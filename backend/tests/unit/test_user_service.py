@@ -11,7 +11,8 @@ def make_user_service(mocker, user_example):
     def _make(is_none=False):
         mock_user_repo = mocker.MagicMock()
         mock_user_repo.get_by_email.return_value = user_example if not is_none else None
-        return UserService(user_repository=mock_user_repo)
+        mock_redis = mocker.MagicMock()
+        return UserService(user_repository=mock_user_repo, redis_service=mock_redis)
     return _make
 
 def test_auth_user_success(make_user_service, user_example):
@@ -92,4 +93,23 @@ def test_auth_user_does_not_commit_on_failure(make_user_service, user_example):
     user_example.is_active = True
 
 
-
+def test_logout_user_success(mocker):
+    """
+    Test trường hợp gọi logout_user thành công đưa token vào blacklist
+    """
+    from datetime import datetime, timezone
+    mock_user_repo = mocker.MagicMock()
+    mock_redis_service = mocker.MagicMock()
+    
+    user_service = UserService(user_repository=mock_user_repo, redis_service=mock_redis_service)
+    
+    # 1. Trường hợp token chưa hết hạn (exp > now)
+    future_exp = datetime.now(timezone.utc).timestamp() + 100
+    user_service.logout_user(jti="test_jti", exp=future_exp)
+    mock_redis_service.blacklist_token.assert_called_once()
+    
+    # 2. Trường hợp token đã hết hạn (exp <= now)
+    mock_redis_service.reset_mock()
+    past_exp = datetime.now(timezone.utc).timestamp() - 100
+    user_service.logout_user(jti="test_jti_expired", exp=past_exp)
+    mock_redis_service.blacklist_token.assert_not_called()

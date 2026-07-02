@@ -5,6 +5,7 @@ from app.services.redis_service import redis_service
 
 # Danh sách các endpoint công khai (không yêu cầu đăng nhập)
 PUBLIC_ENDPOINTS = [
+    "index",
     "auth.login",
 ]
 
