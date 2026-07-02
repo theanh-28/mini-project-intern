@@ -1,6 +1,6 @@
 import os
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,6 +14,16 @@ class Settings(BaseSettings):
     # --- general ---
     debug: bool = False
 
+    # --- jwt ---
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+
+        # --- redis ---
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+
     # --- database url ---
     @property
     def database_url(self) -> str:
@@ -21,7 +31,6 @@ class Settings(BaseSettings):
             f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
-    class Config:
-        env_file = os.getenv("ENV_FILE", ".env")
+    model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"))
 
 settings = Settings()

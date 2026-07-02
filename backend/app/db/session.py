@@ -13,7 +13,7 @@ engine = create_engine(
     pool_timeout=30,            # Thời gian chờ để lấy kết nối từ pool
     pool_recycle=3600,
     connect_args={
-        "init_command": "SET time_zone = '+07:00'",
+        "init_command": "SET time_zone = '+00:00'", # Đặt múi giờ UTC cho kết nối MySQL
     }
 )
 
