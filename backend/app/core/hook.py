@@ -1,6 +1,11 @@
+import logging
+
 from flask import request, jsonify, g
+from jose import ExpiredSignatureError, JWTError
 
 from app.core.security import decode_access_token
+
+logger = logging.getLogger(__name__)
 
 # Danh sách các endpoint công khai (không yêu cầu đăng nhập)
 PUBLIC_ENDPOINTS = [
@@ -8,35 +13,43 @@ PUBLIC_ENDPOINTS = [
     "auth.login",
 ]
 
+
 def login_required():
     """
-    before_request dùng để kiểm tra xem user đã đăng nhập chưa
+    before_request hook để xác thực JWT trước mỗi request.
+    Bỏ qua các endpoint công khai trong PUBLIC_ENDPOINTS.
     """
     from app.services.redis_service import redis_service
     
     if request.endpoint in PUBLIC_ENDPOINTS:
-        return  # Không cần kiểm tra đăng nhập cho các endpoint công khai
+        return
 
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"error": "Thiếu token hoặc token sai định dạng (Bearer <token>)"}), 401
-        
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Thiếu token hoặc sai định dạng (Bearer <token>)"}), 401
+
+    token = auth_header.split(" ")[1]
+
     try:
-        token = auth_header.split(" ")[1]
-        
         payload = decode_access_token(token)
-        jti = payload.get("jti")
-        
-        # Kiểm tra jti có trong payload không
-        if not jti:
-            return jsonify({"error": "Token không hợp lệ"}), 400
-        
-        # Kiểm tra xem token này đã bị thu hồi (đăng xuất) chưa
-        if redis_service.is_token_blacklisted(jti):
-            return jsonify({"error": "Token đã bị vô hiệu hóa (Đã đăng xuất)"}), 401
-            
-        # Lưu thông tin user vào Flask global g, các route sau có thể dùng
-        g.current_user = payload
-        
+    except ExpiredSignatureError:
+        return jsonify({"error": "Token đã hết hạn, vui lòng đăng nhập lại"}), 401
+    except (JWTError, ValueError):
+        return jsonify({"error": "Token không hợp lệ"}), 401
     except Exception:
-        return jsonify({"error": "Token không hợp lệ hoặc đã hết hạn"}), 401
+        logger.exception("Lỗi không xác định khi giải mã token")
+        return jsonify({"error": "Lỗi xác thực token"}), 500
+
+    jti = payload.get("jti")
+
+    # Kiểm tra token đã bị thu hồi (đăng xuất) chưa
+    try:
+        if redis_service.is_token_blacklisted(jti):
+            return jsonify({"error": "Token đã bị thu hồi, vui lòng đăng nhập lại"}), 401
+    except Exception as e:
+        # Nếu có lỗi khi kiểm tra token trong Redis, log lỗi và trả về 500
+        logger.error(f"Lỗi kiểm tra token trong Redis: {e}")
+        return jsonify({"error": "Lỗi dịch vụ Redis"}), 500
+
+    # Lưu payload vào Flask g để các route sử dụng
+    g.current_user = payload

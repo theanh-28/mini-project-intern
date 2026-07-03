@@ -29,7 +29,9 @@ def create_app():
 
     # Đăng ký blueprints
     from app.routes.auth_routes import auth_bp
+    from app.routes.admin_routes import admin_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
 
     return app

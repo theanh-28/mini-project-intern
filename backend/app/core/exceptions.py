@@ -38,3 +38,9 @@ class InvalidInputError(AuthException):
     def __init__(self, message: str = "Input không hợp lệ", code_error: str = "INVALID_INPUT"):
         super().__init__(message, status_code=400, code_error=code_error)
         
+class AdminAccessRequiredError(AuthException):
+    """
+    Ngoại lệ khi user không có quyền admin
+    """
+    def __init__(self, message: str = "Yêu cầu quyền admin"):
+        super().__init__(message, status_code=403, code_error="ADMIN_ACCESS_REQUIRED")

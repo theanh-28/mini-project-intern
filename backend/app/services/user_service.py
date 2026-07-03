@@ -1,8 +1,7 @@
 from datetime import datetime, timezone
 
 from app.core.security import verify_password
-from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
-
+from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError, AdminAccessRequiredError
 
 class UserService:
     def __init__(self, user_repository, redis_service):
@@ -38,6 +37,18 @@ class UserService:
         # Nếu token vẫn chưa hết hạn thì cho vào blacklist
         if ttl > 0:
             self.redis_service.blacklist_token(jti, ttl)
+
+    def get_list_user(self, is_admin: bool, page: int, per_page: int):
+        """
+        Lấy danh sách user.
+        Trả về tuple (users, total).
+        """
+        if not is_admin:
+            raise AdminAccessRequiredError("Yêu cầu quyền admin để truy cập danh sách user")
+
+        total = self.user_repository.count()
+        users = self.user_repository.get_page(page, per_page)
+        return users, total
     
 def get_user_service() -> UserService:
     from app.repositories.user_repository import get_user_repository

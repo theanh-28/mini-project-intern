@@ -38,9 +38,16 @@ def admin_example():
 @pytest.fixture
 def access_token(user_example):
     """
-    Tạo access token
+    Tạo access token cho user thường (is_admin=False)
     """
     return create_access_token(user_example.user_id, user_example.is_admin)
+
+@pytest.fixture
+def admin_token(admin_example):
+    """
+    Tạo access token cho admin (is_admin=True)
+    """
+    return create_access_token(admin_example.user_id, admin_example.is_admin)
 
 @pytest.fixture
 def db_session():
@@ -100,5 +107,6 @@ def mock_redis(mocker):
     """
     mock = mocker.patch("app.services.redis_service.redis_service")
     mock.is_token_blacklisted.return_value = False
+    mock.get.return_value = None
     
     return mock

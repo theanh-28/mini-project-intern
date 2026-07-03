@@ -1,4 +1,6 @@
+import pytest
 from datetime import datetime, timezone, timedelta
+
 from freezegun import freeze_time
 from jose import jwt, ExpiredSignatureError, JWTError
 
@@ -47,42 +49,45 @@ def test_create_access_token_contains_user_id(user_example, access_token):
 
 
 # ====== Test decode token ======
-def test_decode_expired_token_raise(user_example):
+def test_decode_expired_token_raises(user_example):
     """
-    Kiểm tra token hết hạn
+    Kiểm tra token hết hạn raise ExpiredSignatureError
     """
     with freeze_time("2026-01-01 00:00:00"):
         token = create_access_token(user_example.user_id, user_example.is_admin)
 
-    # Giả lập sau 2h
     with freeze_time("2026-01-01 02:00:00"):
-        try:
+        with pytest.raises(ExpiredSignatureError):
             decode_access_token(token)
-            print("Lỗi: Token chứa mất khi hết hạn")
-        except ExpiredSignatureError:
-            pass
 
 def test_decode_wrong_secret_raises(access_token):
     """
-    Kiểm tra secret không hợp lệ
+    Kiểm tra sai secret key raise JWTError
     """
-    try:
+    with pytest.raises(JWTError):
         decode_access_token(access_token, secret_key="fake_secret_key")
-        print("Lỗi: token vẫn giải mã được với secret_key khác")
-    except JWTError:
-        pass
 
-def test_decode_tampered_token_raise(access_token):
+def test_decode_tampered_token_raises(access_token):
     """
-    Kiểm tra token bị sửa đổi
+    Kiểm tra token bị giả mạo raise JWTError
     """
-    try:
-        tampered = access_token[:-5] + "xxxxx"
+    tampered = access_token[:-5] + "xxxxx"
+    with pytest.raises(JWTError):
         decode_access_token(tampered)
 
-        print("Lỗi: Token vẫn giải được khi sửa token")
-    except JWTError:
-        pass
+def test_decode_token_missing_sub_raises():
+    """
+    Kiểm tra token thiếu claim 'sub' raise JWTError
+    """
+    from app.core.config import settings
+    payload_no_sub = {
+        "jti": "some-jti",
+        "is_admin": False,
+        "exp": 9999999999
+    }
+    token = jwt.encode(payload_no_sub, settings.secret_key, algorithm=settings.algorithm)
+    with pytest.raises(JWTError):
+        decode_access_token(token)
 
 
 # ====== Test password ======

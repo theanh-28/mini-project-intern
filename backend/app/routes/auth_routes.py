@@ -2,7 +2,6 @@ import logging
 
 from flask import Blueprint, request, jsonify, g
 from pydantic import ValidationError
-from datetime import datetime, timezone
 
 from app.schemas.auth import LoginRequest, LoginResponse
 from app.core.security import create_access_token

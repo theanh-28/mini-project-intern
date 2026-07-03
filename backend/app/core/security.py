@@ -30,20 +30,23 @@ def create_access_token(user_id: int,
 
     return jwt.encode(payload, secret_key, algorithm=algorithm)
 
-def decode_access_token(token: str, 
-                        secret_key: str = settings.secret_key, 
+def decode_access_token(token: str,
+                        secret_key: str = settings.secret_key,
                         algorithm: str = settings.algorithm) -> dict:
     """
     Giải mã access token và trả về payload chứa các claims.
+    Raise ExpiredSignatureError nếu token hết hạn.
+    Raise JWTError nếu token không hợp lệ hoặc thiếu claim bắt buộc.
     """
-    try:
-        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-        user_id:str | None = payload.get("sub")
-        if user_id is None:
-            return None
-        return payload
-    except (ExpiredSignatureError, JWTError, ValueError):
-        raise
+    payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+
+    if not payload.get("sub"):
+        raise JWTError("Token thiếu claim 'sub'")
+
+    if not payload.get("jti"):
+        raise JWTError("Token thiếu claim 'jti'")
+
+    return payload
 
 def hash_password(password: str) -> str:
     """
