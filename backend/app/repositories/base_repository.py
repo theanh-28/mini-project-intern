@@ -16,9 +16,3 @@ class BaseRepository:
     def get_page(self, page:int = 1, limit: int = 100):
         skip = (page - 1) * limit
         return self.db.query(self.model).offset(skip).limit(limit).all()
-
-    def commit(self):
-        self.db.commit()
-
-    def rollback(self):
-        self.db.rollback()

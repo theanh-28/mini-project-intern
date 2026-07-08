@@ -25,7 +25,6 @@ class UserService:
             raise AccountLockedError("Tài khoản đang bị khóa")
             
         self.user_repository.update_last_login(user)
-        self.user_repository.commit()
         return user
     
     def logout_user(self, jti: str, exp: int):

@@ -101,6 +101,4 @@ def mock_redis(mocker):
     mock = mocker.patch("app.services.redis_service.redis_service")
     mock.is_token_blacklisted.return_value = False
     
-    # Patch tại hook module do import tĩnh ở đầu file
-    mocker.patch("app.core.hook.redis_service", mock)
     return mock

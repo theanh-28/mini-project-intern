@@ -13,6 +13,7 @@ class UserRepository(BaseRepository):
 
     def update_last_login(self, user: User) -> None:
         user.last_login = datetime.now(timezone.utc)
+        self.db.commit()
 
 
 def get_user_repository() -> UserRepository:

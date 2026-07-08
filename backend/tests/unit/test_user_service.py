@@ -55,20 +55,19 @@ def test_auth_user_inactive_account(make_user_service, user_example):
         user_service.auth_user(email=user_example.email, password="123456")
     assert str(excinfo.value) == "Tài khoản đang bị khóa"
 
-def test_auth_user_calls_update_last_login_and_commit(make_user_service, user_example):
+def test_auth_user_calls_update_last_login(make_user_service, user_example):
     """
-    Test trường hợp xác thực thành công sẽ gọi update_last_login và commit
+    Test trường hợp xác thực thành công sẽ gọi update_last_login
     """
     user_service = make_user_service(is_none=False)
     user = user_service.auth_user(email=user_example.email, password="123456")
 
     assert user == user_example
     user_service.user_repository.update_last_login.assert_called_once_with(user_example)
-    user_service.user_repository.commit.assert_called_once()
 
 def test_auth_user_does_not_commit_on_failure(make_user_service, user_example):
     """
-    Test trường hợp xác thực thất bại không gọi commit
+    Test trường hợp xác thực thất bại không gọi ghi đè thông tin đăng nhập
     """
     from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
 
@@ -76,20 +75,20 @@ def test_auth_user_does_not_commit_on_failure(make_user_service, user_example):
     user_service_1 = make_user_service(is_none=True)
     with pytest.raises(EmailNotFoundError):
         user_service_1.auth_user(email="nonexistent@example.com", password="123")
-    user_service_1.user_repository.commit.assert_not_called()
+    user_service_1.user_repository.update_last_login.assert_not_called()
 
     # 2. Sai mật khẩu
     user_service_2 = make_user_service(is_none=False)
     with pytest.raises(WrongPasswordError):
         user_service_2.auth_user(email=user_example.email, password="wrong_password")
-    user_service_2.user_repository.commit.assert_not_called()
+    user_service_2.user_repository.update_last_login.assert_not_called()
 
     # 3. Tài khoản bị khóa
     user_example.is_active = False
     user_service_3 = make_user_service(is_none=False)
     with pytest.raises(AccountLockedError):
         user_service_3.auth_user(email=user_example.email, password="123456")
-    user_service_3.user_repository.commit.assert_not_called()
+    user_service_3.user_repository.update_last_login.assert_not_called()
     user_example.is_active = True
 
 

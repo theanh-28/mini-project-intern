@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from app.schemas.auth import LoginRequest, LoginResponse
 from app.core.security import create_access_token
 from app.services.user_service import get_user_service
-from app.core.security import create_access_token
 from app.core.exceptions import AuthException
 
 auth_bp = Blueprint('auth', __name__)
@@ -51,10 +50,14 @@ def logout():
                    
     except Exception as e:
         # Lỗi trong quá trình xử lý logout (redis service)
+        # Sau có thể thêm 1 bảng database lưu các jti của jwt đã logout
+        # để kiểm tra như 1 backlist dự phòng
+
         logger.error(f"Lỗi xư lý bên server khi logout: {str(e)}")
 
     finally:
         # Nếu có lỗi thì vẫn trả về 200 để client xóa token khỏi local storage
+        # Chấp nhận rủ ro để tối ưu UX
         return jsonify({"message": "Đăng xuất thành công"}), 200
          
 

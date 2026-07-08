@@ -2,8 +2,10 @@ import redis
 from app.core.config import settings
 
 class RedisService():
-    def __init__(self):
-        self.client = redis.Redis(
+    BLACKLIST_PREFIX = "blacklist:"
+
+    def __init__(self, client : redis.Redis | None = None):
+        self.client = client or redis.Redis(
             host=settings.redis_host,
             port=settings.redis_port,
             db=settings.redis_db,
@@ -20,9 +22,9 @@ class RedisService():
         self.client.delete(key)
 
     def blacklist_token(self, jti: str, ttl: int):
-        self.client.set(name=f"blacklist:{jti}", value="1", ex=ttl)
+        self.client.set(name=f"{self.BLACKLIST_PREFIX}{jti}", value="1", ex=ttl)
 
     def is_token_blacklisted(self, jti: str):
-        return self.client.exists(f"blacklist:{jti}") == 1
+        return self.client.exists(f"{self.BLACKLIST_PREFIX}{jti}") == 1
 
 redis_service = RedisService()

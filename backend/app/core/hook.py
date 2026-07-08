@@ -1,7 +1,6 @@
 from flask import request, jsonify, g
 
 from app.core.security import decode_access_token
-from app.services.redis_service import redis_service
 
 # Danh sách các endpoint công khai (không yêu cầu đăng nhập)
 PUBLIC_ENDPOINTS = [
@@ -13,6 +12,8 @@ def login_required():
     """
     before_request dùng để kiểm tra xem user đã đăng nhập chưa
     """
+    from app.services.redis_service import redis_service
+    
     if request.endpoint in PUBLIC_ENDPOINTS:
         return  # Không cần kiểm tra đăng nhập cho các endpoint công khai
 
