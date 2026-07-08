@@ -20,6 +20,14 @@ class RedisService():
     
     def delete(self, key: str):
         self.client.delete(key)
+    
+    def delete_pattern(self, pattern: str):
+        """
+        Xóa tất cả các key trong Redis có tên khớp với pattern.
+        """
+        keys = list(self.client.scan_iter(match=pattern))
+        if keys:
+            self.client.delete(*keys)
 
     def expire(self, key: str, ttl: int):
         self.client.expire(name=key, time=ttl)  # Gia hạn thoi gian sống của key trong Redis
