@@ -1,30 +1,7 @@
+import json
 import math
+
 import pytest
-
-from app.models import User
-from app.core.security import hash_password
-
-
-# ====== Fixtures ======
-
-@pytest.fixture
-def insert_users(db_session):
-    """
-    Thêm 15 user vào db để test pagination
-    """
-    users = [
-        User(
-            user_id=i,
-            name=f"user_{i}",
-            email=f"user_{i}@example.com",
-            password=hash_password("123456"),
-            is_active=True,
-        )
-        for i in range(1, 16)  # 15 users
-    ]
-    db_session.add_all(users)
-    db_session.commit()
-    return users
 
 
 # ====== Test Authorization ======
@@ -209,10 +186,11 @@ def test_get_users_page_2_returns_remaining_users(client, admin_token, insert_us
 
 def test_get_users_when_subsequent_request_return_cached_response(client, admin_token, insert_users, mock_redis, mocker):
     """
-    Lần đầu gọi -> Cache Miss (truy cập DB) -> Lần hai gọi -> Cache Hit (lấy từ Redis, không truy cập DB)
+    Lần đầu gọi → Cache Miss (truy cập DB) → Lần hai gọi → Cache Hit (lấy từ Redis, không truy cập DB)
+    
     """
     from app.services.user_service import UserService
-    
+
     spy_get_list = mocker.spy(UserService, "get_list_user")
 
     # Lần 1: Giả lập cache miss
@@ -226,7 +204,6 @@ def test_get_users_when_subsequent_request_return_cached_response(client, admin_
     assert spy_get_list.call_count == 1
 
     # Lần 2: Giả lập cache hit
-    import json
     cached_data = {
         "data": response1.get_data(as_text=True),
         "status_code": 200,
@@ -245,7 +222,7 @@ def test_get_users_when_subsequent_request_return_cached_response(client, admin_
 
 def test_get_users_when_different_pages_return_different_cache_keys(client, admin_token, insert_users, mock_redis):
     """
-    Gọi các trang khác nhau -> Sử dụng các cache key khác nhau (không bị đè)
+    Gọi các trang khác nhau → Sử dụng các cache key khác nhau (không bị đè)
     """
     # Lần 1: page 1
     client.get(
@@ -271,7 +248,7 @@ def test_get_users_when_different_pages_return_different_cache_keys(client, admi
 
 def test_get_users_when_response_is_error_does_not_cache(client, access_token, mock_redis):
     """
-    Response lỗi (ví dụ: 403 Forbidden do token thường) -> Không lưu vào Redis cache
+    Response lỗi (ví dụ: 403 Forbidden do token thường) → Không lưu vào Redis cache
     """
     response = client.get(
         "/admin/users",
@@ -280,3 +257,28 @@ def test_get_users_when_response_is_error_does_not_cache(client, access_token, m
     assert response.status_code == 403
 
     mock_redis.set.assert_not_called()
+
+
+def test_get_users_when_non_admin_and_cache_exists_return_403(client, access_token, mock_redis):
+    """
+    Trường hợp cache đang có sẵn dữ liệu (do admin gọi trước đó),
+    nhưng user thường truy cập → vẫn phải trả về 403 và KHÔNG được lấy dữ liệu từ cache.
+    """
+    cached_data = {
+        "data": json.dumps({"users": [], "total": 0}),
+        "status_code": 200,
+        "content_type": "application/json"
+    }
+    mock_redis.get.return_value = json.dumps(cached_data)
+
+    response = client.get(
+        "/admin/users",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    
+    assert response.status_code == 403
+    data = response.get_json()
+    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+
+    mock_redis.get.assert_not_called()
+

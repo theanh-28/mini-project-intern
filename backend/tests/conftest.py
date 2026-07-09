@@ -103,10 +103,12 @@ def client(app):
 @pytest.fixture(autouse=True)
 def mock_redis(mocker):
     """
-    Tự động mock redis_service cho tất cả các tests để tránh kết nối tới Redis thật
+    Tự động mock redis_service cho tất cả các tests để tránh kết nối tới Redis thật.
     """
+    
     mock = mocker.patch("app.services.redis_service.redis_service")
+
     mock.is_token_blacklisted.return_value = False
     mock.get.return_value = None
-    
+
     return mock

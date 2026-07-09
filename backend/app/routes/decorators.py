@@ -1,9 +1,9 @@
 from functools import wraps
 import json
 import logging
-from flask import request, make_response
+from flask import request, make_response, g
 
-from app.services.redis_service import redis_service
+from app.core.exceptions import AdminAccessRequiredError
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,8 @@ def cache_response(key_builder, ttl: int = 60):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            from app.services.redis_service import redis_service
+
             cache_key = None
             try:
                 # Tạo key cache dựa trên request
@@ -64,3 +66,21 @@ def cache_response(key_builder, ttl: int = 60):
 
         return wrapper
     return decorator
+
+
+def require_admin(func):
+    """
+    Decorator để check quyền admin cho các request cần quyền admin
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        payload = g.get("current_user")
+        is_admin = payload.get("is_admin")
+
+        if not is_admin:
+            raise AdminAccessRequiredError("Yêu cầu quyền Admin")
+        
+        return func(*args, **kwargs)
+    
+    return wrapper
+
