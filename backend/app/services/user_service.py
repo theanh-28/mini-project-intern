@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 
 from app.core.security import verify_password, hash_password
 from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
-from app.core.exceptions import AdminAccessRequiredError
+from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, PrivilegeViolationError
 from app.core.exceptions import DuplicateEmailError, DuplicateNameError
+from app.core.exceptions import UserNotFoundError
 
 class UserService:
     def __init__(self, user_repository, redis_service):
@@ -76,6 +77,41 @@ class UserService:
         # Tạo user mới trong cơ sở dữ liệu
         new_user = self.user_repository.create(name=name, email=email, password=hashed_password)
         return new_user
+    
+    def update_user(self, actor_id: int, user_id: int, name: str, email: str, is_active: bool):
+        """
+        Cập nhật thông tin của user
+        Trả về user sau khi đã cập nhật
+        """
+
+        # Kiểm tra có hành động tự khóa tài khoản của mình không
+        if user_id == actor_id and is_active is False:
+            raise SelfDisableError("Admin không thể tự khóa tài khoản của chính mình")
+
+        # Kiểm tra user có tồn tại không
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError("User không tồn tại")
+        
+        # Kiểm tra tài khoản cập nhật có phải admin khác không
+        if user.is_admin and user_id != actor_id:
+            raise PrivilegeViolationError("Admin không thể thay đổi thông tin của admin khác")
+        
+        # Kiểm tra email muốn cập nhật đã tồn tại chưa
+        if user.email != email:
+            existing_user_email = self.user_repository.get_by_email(email)
+            if existing_user_email:
+                raise DuplicateEmailError("Email đã tồn tại")
+        
+        # Kiểm tra name muốn cập nhật đã tồn tại chưa
+        if user.name != name:
+            existing_user_name = self.user_repository.get_by_name(name)
+            if existing_user_name:
+                raise DuplicateNameError("Tên đã tồn tại")
+        
+        # Cập nhật thông tin user vào database
+        updated_user = self.user_repository.update(user=user, name=name, email=email, is_active=is_active)
+        return updated_user
     
 def get_user_service() -> UserService:
     from app.repositories.user_repository import get_user_repository

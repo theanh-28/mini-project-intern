@@ -61,6 +61,9 @@ def create_app():
     # Xử lý ngoại lệ bất ngờ
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):
+        if isinstance(e, HTTPException):
+            return handle_http_exception(e)
+
         error_id = str(uuid.uuid4())
         logger.exception(f"{error_id} Unhandled exception")
         return jsonify({

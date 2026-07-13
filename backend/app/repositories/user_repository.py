@@ -31,6 +31,14 @@ class UserRepository(BaseRepository):
     def update_last_login(self, user: User) -> None:
         user.last_login = datetime.now(timezone.utc)
         self.db.commit()
+    
+    def update(self, user: User, name: str, email: str, is_active: bool) -> User:
+        user.name = name
+        user.email = email 
+        user.is_active = is_active
+        self.db.commit()
+        self.db.refresh(user)
+        return user
 
 
 def get_user_repository() -> UserRepository:

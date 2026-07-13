@@ -97,3 +97,21 @@ class DuplicateEmailError(ConflictException):
     """Ngoại lệ khi tạo tài khoản trùng email đã tồn tại"""
     def __init__(self, message: str = "Email đã tồn tại"):
         super().__init__(message, code_error="DUPLICATE_EMAIL")
+
+
+class UserNotFoundError(AppException):
+    """Ngoại lệ khi không tìm thấy user theo user_id"""
+    def __init__(self, message: str = "User không tồn tại"):
+        super().__init__(message, status_code=404, code_error="USER_NOT_FOUND")
+
+
+class SelfDisableError(PermissionException):
+    """Ngoại lệ khi admin tự khóa tài khoản của chính mình"""
+    def __init__(self, message: str = "Admin không thể tự khóa tài khoản của chính mình"):
+        super().__init__(message, status_code=403, code_error="SELF_DISABLE_NOT_ALLOWED")
+
+
+class PrivilegeViolationError(PermissionException):
+    """Ngoại lệ khi thục hiện hành động vượt quá cấp bậc quyền hạn"""
+    def __init__(self, message: str = "Không có quyền thực hiện thao tác này"):
+        super().__init__(message, status_code=403, code_error="PRIVILEGE_VIOLATION")

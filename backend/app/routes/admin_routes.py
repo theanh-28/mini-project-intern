@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, g
 import logging
 
 from app.services.user_service import get_user_service
-from app.schemas.user import UserListResponse, UserResponse, UserListRequest, UserCreateRequest
+from app.schemas.user import UserListResponse, UserResponse, UserListRequest, UserCreateRequest, UserUpdateRequest
 from app.core.exceptions import AppException
 from app.routes.decorators import cache_response, invalidate_cache, require_admin
 
@@ -68,7 +68,7 @@ def create_user():
     Chỉ admin mới có quyền tạo user mới.
     """
 
-    data = UserCreateRequest(**(request.json or {}))
+    data = UserCreateRequest.model_validate(request.json or {})
 
     user_service = get_user_service()
 
@@ -84,3 +84,35 @@ def create_user():
     user_response = UserResponse.model_validate(new_user)
     logger.info(f"User created: id={new_user.user_id}, name={new_user.name}, email={new_user.email}, is_admin={new_user.is_admin}")
     return jsonify(user_response.model_dump(mode='json')), 201
+
+
+@admin_bp.route("/admin/users/<int:user_id>", methods=["PUT"])
+@require_admin
+@invalidate_cache(key="users:list:page=*:per_page=*")
+def update_user(user_id: int):
+    """
+    Endpoint để cập nhật thông tin của user.
+    """
+
+    data = UserUpdateRequest.model_validate(request.json or {})
+
+    payload = g.get("current_user")
+    
+    user_service = get_user_service()
+
+    try:
+        updated_user = user_service.update_user(
+            actor_id=int(payload.get("sub")),
+            user_id=user_id,
+            name=data.name,
+            email=data.email,
+            is_active=data.is_active,
+        )
+
+    except AppException as e:
+        return jsonify({"error": e.message, "code": e.code_error}), e.status_code
+
+    user_response = UserResponse.model_validate(updated_user)
+    logger.info(f"User updated: id={updated_user.user_id}, name={updated_user.name}, email={updated_user.email}, is_active={updated_user.is_active}")
+    return jsonify(user_response.model_dump(mode='json')), 200    
+

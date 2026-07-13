@@ -216,3 +216,139 @@ def test_create_user_does_not_store_raw_password(make_user_service, user_example
 
     assert stored_password != raw_password          # không lưu raw
     assert stored_password.startswith("$2b$")       # bcrypt format
+
+
+# ====== TEST HÀM UPDATE_USER   ======
+
+def test_update_user_success(make_user_service, user_example):
+    """
+    Cập nhật thông tin user thành công
+    """
+    user_example.is_admin = False  # Đảm bảo không dính check admin khác
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_email=None,
+        get_by_name=None,
+        update=user_example
+    )
+
+    result = user_service.update_user(
+        actor_id=999, # Admin khác sửa
+        user_id=user_example.user_id,
+        name="new_name",
+        email="new_email@example.com",
+        is_active=True
+    )
+
+    assert result == user_example
+    user_service.user_repository.update.assert_called_once_with(
+        user=user_example,
+        name="new_name",
+        email="new_email@example.com",
+        is_active=True
+    )
+
+def test_update_user_self_disable_raise_self_disable_error(make_user_service, user_example):
+    """
+    Admin tự khóa chính mình (user_id == actor_id và is_active=False) => SelfDisableError
+    """
+    from app.core.exceptions import SelfDisableError
+    user_service = make_user_service()
+
+    with pytest.raises(SelfDisableError) as excinfo:
+        user_service.update_user(
+            actor_id=user_example.user_id, # actor_id trùng user_id
+            user_id=user_example.user_id,
+            name="new_name",
+            email="new_email@example.com",
+            is_active=False  # Khóa tài khoản
+        )
+
+    user_service.user_repository.update.assert_not_called()
+
+def test_update_user_when_not_found_raise_user_not_found_error(make_user_service):
+    """
+    Không tìm thấy user theo user_id => UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+    user_service = make_user_service(get_by_id=None)
+
+    with pytest.raises(UserNotFoundError) as excinfo:
+        user_service.update_user(
+            actor_id=999,
+            user_id=9999,
+            name="new_name",
+            email="new_email@example.com",
+            is_active=True
+        )
+
+    user_service.user_repository.update.assert_not_called()
+
+def test_update_user_when_target_is_admin_raise_privilege_violation_error(make_user_service, user_example):
+    """
+    Cố gắng sửa đổi Admin khác (user.is_admin=True và user_id != actor_id) => PrivilegeViolationError
+    """
+    from app.core.exceptions import PrivilegeViolationError
+    user_example.is_admin = True # Đối tượng bị sửa là admin
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(PrivilegeViolationError) as excinfo:
+        user_service.update_user(
+            actor_id=999, # Admin khác thực hiện
+            user_id=user_example.user_id,
+            name="new_name",
+            email="new_email@example.com",
+            is_active=True
+        )
+
+    user_service.user_repository.update.assert_not_called()
+
+def test_update_user_when_email_exists_raise_duplicate_email_error(make_user_service, user_example):
+    """
+    Cập nhật sang email mới đã được sử dụng bởi user khác => DuplicateEmailError
+    """
+    from app.core.exceptions import DuplicateEmailError
+    from app.models.user import User
+    
+    # Mock một user khác sở hữu email cần đổi
+    another_user = User(user_id=99, email="taken@example.com", name="other")
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_email=another_user
+    )
+
+    with pytest.raises(DuplicateEmailError) as excinfo:
+        user_service.update_user(
+            actor_id=999,
+            user_id=user_example.user_id,
+            name=user_example.name,
+            email="taken@example.com", # Email bị trùng
+            is_active=True
+        )
+
+    user_service.user_repository.update.assert_not_called()
+
+def test_update_user_when_name_exists_raise_duplicate_name_error(make_user_service, user_example):
+    """
+    Cập nhật sang tên mới đã được sử dụng bởi user khác => DuplicateNameError
+    """
+    from app.core.exceptions import DuplicateNameError
+    from app.models.user import User
+    
+    # Mock một user khác sở hữu tên cần đổi
+    another_user = User(user_id=99, email="other@example.com", name="taken_name")
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_name=another_user
+    )
+
+    with pytest.raises(DuplicateNameError) as excinfo:
+        user_service.update_user(
+            actor_id=999,
+            user_id=user_example.user_id,
+            name="taken_name", # Tên bị trùng
+            email=user_example.email,
+            is_active=True
+        )
+
+    user_service.user_repository.update.assert_not_called()

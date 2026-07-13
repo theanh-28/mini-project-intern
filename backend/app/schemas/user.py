@@ -21,6 +21,8 @@ class UserListRequest(BaseModel):
     is_admin: bool | None = None
     created_at_from: datetime | None = None
     created_at_to: datetime | None = None
+    
+    model_config = ConfigDict(extra="forbid")
 
 class UserListResponse(BaseModel):
     users: list[UserResponse]
@@ -34,3 +36,13 @@ class UserCreateRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class UserUpdateRequest(BaseModel):
+    name: str
+    email: EmailStr
+    is_active: bool
+
+    model_config = ConfigDict(extra="forbid")   # Cấm dữ liệu liệu lạ người các trường trên
