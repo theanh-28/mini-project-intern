@@ -50,6 +50,7 @@ def login_required():
 
     jti = payload.get("jti")
     user_id = payload.get("sub")
+    token_iat = payload.get("iat", 0)
 
     try:
         # Kiểm tra token đã bị thu hồi (đăng xuất) chưa
@@ -57,7 +58,7 @@ def login_required():
             raise TokenRevokedError()
         
         # Kiểm tra tài khoản đã bị khóa (disabled) chưa
-        if redis_service.is_account_locked(user_id):
+        if redis_service.is_account_locked(user_id, token_iat):
             raise AccountLockedError()
     except AppException:
         raise
