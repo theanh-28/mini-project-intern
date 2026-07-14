@@ -352,3 +352,63 @@ def test_update_user_when_name_exists_raise_duplicate_name_error(make_user_servi
         )
 
     user_service.user_repository.update.assert_not_called()
+
+
+def test_update_user_same_user_different_case_email_success(make_user_service, user_example):
+    """
+    Cập nhật email chỉ thay đổi chữ hoa/thường (ví dụ từ user_1@example.com thành User_1@Example.com).
+    Hành động này phải THÀNH CÔNG và không được báo lỗi trùng lặp (DuplicateEmailError).
+    """
+    
+    # Mock khi get_by_email bằng email mới sẽ trả về chính user_example (giả lập hành vi case-insensitive của MySQL)
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_email=user_example,  # Trả về chính nó
+        update=user_example
+    )
+
+    result = user_service.update_user(
+        actor_id=999,
+        user_id=user_example.user_id,
+        name=user_example.name,
+        email="User_1@Example.com",
+        is_active=True
+    )
+
+    assert result == user_example
+    user_service.user_repository.update.assert_called_once_with(
+        user=user_example,
+        name=user_example.name,
+        email="User_1@Example.com",
+        is_active=True
+    )
+
+
+def test_update_user_same_user_different_case_name_success(make_user_service, user_example):
+    """
+    Cập nhật name chỉ thay đổi chữ hoa/thường (ví dụ từ user_1 thành User_1).
+    Hành động này phải THÀNH CÔNG và không được báo lỗi trùng lặp (DuplicateNameError).
+    """
+    
+    # Mock khi get_by_name bằng name mới sẽ trả về chính user_example (giả lập hành vi case-insensitive của MySQL)
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_name=user_example,  # Trả về chính nó
+        update=user_example
+    )
+
+    result = user_service.update_user(
+        actor_id=999,
+        user_id=user_example.user_id,
+        name="User_1",
+        email=user_example.email,
+        is_active=True
+    )
+
+    assert result == user_example
+    user_service.user_repository.update.assert_called_once_with(
+        user=user_example,
+        name="User_1",
+        email=user_example.email,
+        is_active=True
+    )

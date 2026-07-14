@@ -100,17 +100,31 @@ class UserService:
         # Kiểm tra email muốn cập nhật đã tồn tại chưa
         if user.email != email:
             existing_user_email = self.user_repository.get_by_email(email)
-            if existing_user_email:
+            if existing_user_email and existing_user_email.user_id != user.user_id: # Tránh trường hợp DB không phân biệt hoa/thường
                 raise DuplicateEmailError("Email đã tồn tại")
         
         # Kiểm tra name muốn cập nhật đã tồn tại chưa
         if user.name != name:
             existing_user_name = self.user_repository.get_by_name(name)
-            if existing_user_name:
+            if existing_user_name and existing_user_name.user_id != user.user_id: # Tránh trường hợp DB không phân biệt hoa/thường
                 raise DuplicateNameError("Tên đã tồn tại")
         
+        # So sánh trạng thái mói so với trạng thái hiện tại của tài khoản
+        status_changed = user.is_active != is_active
+
         # Cập nhật thông tin user vào database
         updated_user = self.user_repository.update(user=user, name=name, email=email, is_active=is_active)
+
+        # Xử lí Redis nếu trạng thái của tài khoản thay đổi sau cập nhật
+        if status_changed:
+            if not is_active:
+                from app.core.config import settings
+                jwt_ttl_seconds = settings.access_token_expire_minutes * 60
+                
+                self.redis_service.lock_account(user_id=user_id, ttl=jwt_ttl_seconds)
+            else:
+                self.redis_service.unlock_account(user_id=user_id)
+
         return updated_user
     
 def get_user_service() -> UserService:

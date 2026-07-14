@@ -75,6 +75,25 @@ class AccountLockedError(AuthException):
         super().__init__(message, status_code=403, code_error="ACCOUNT_LOCKED")
 
 
+class TokenExpiredError(AuthException):
+    """Ngoại lệ khi token đã hết hạn"""
+    def __init__(self, message: str = "Token đã hết hạn, vui lòng đăng nhập lại"):
+        super().__init__(message, code_error="TOKEN_EXPIRED")
+
+
+class InvalidTokenError(AuthException):
+    """Ngoại lệ khi token không hợp lệ hoặc thiếu hoặc sai cấu trúc"""
+    def __init__(self, message: str = "Token không hợp lệ"):
+        super().__init__(message, code_error="INVALID_TOKEN")
+
+
+class TokenRevokedError(AuthException):
+    """Ngoại lệ khi token đã bị thu hồi (đăng xuất)"""
+    def __init__(self, message: str = "Token đã bị thu hồi, vui lòng đăng nhập lại"):
+        super().__init__(message, code_error="TOKEN_REVOKED")
+
+
+
 class AdminAccessRequiredError(PermissionException):
     """Ngoại lệ khi user không có quyền admin"""
     def __init__(self, message: str = "Yêu cầu quyền admin"):

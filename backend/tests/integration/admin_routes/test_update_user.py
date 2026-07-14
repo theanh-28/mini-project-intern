@@ -240,3 +240,58 @@ def test_when_admin_tries_to_update_another_admin_return_403(client, admin_token
     assert response.status_code == 403
     data = response.get_json()
     assert data["code"] == "PRIVILEGE_VIOLATION"
+
+
+def test_update_user_casing_change_success(client, admin_token, insert_users):
+    """
+    Cập nhật email/name chỉ thay đổi chữ hoa/thường của user đó => Thành công 200 OK
+    """
+    response = client.put(
+        "/admin/users/3",  # user_id = 3, name = user_3, email = user_3@example.com
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "name": "USER_3",               # Đổi chữ hoa
+            "email": "USER_3@example.com",  # Đổi chữ hoa
+            "is_active": True
+        }
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["name"] == "USER_3"
+    assert data["email"] == "USER_3@example.com"
+
+
+def test_update_user_to_inactive_calls_redis_revocation(client, admin_token, insert_users, mock_redis):
+    """
+    Khi admin khóa tài khoản (is_active=False), hệ thống phải thực hiện ghi vào Redis để thu hồi token.
+    """
+    response = client.put(
+        "/admin/users/3",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "name": "user_3",
+            "email": "user_3@example.com",
+            "is_active": False  # Khóa tài khoản
+        }
+    )
+    assert response.status_code == 200
+
+    # Kiểm tra Redis Service được gọi đúng hàm lock_account với TTL 3600 giây (60 phút * 60)
+    mock_redis.lock_account.assert_called_once_with(user_id=3, ttl=3600)
+
+
+def test_request_blocked_when_user_is_cached_disabled_in_redis(client, access_token, mock_redis):
+    """
+    Khi token gửi lên thuộc về user đã được cache trạng thái khóa (is_active=False) trong Redis -> 403 Forbidden
+    """
+    # Giả lập Redis phản hồi rằng user này đã bị khóa
+    mock_redis.is_account_locked.return_value = True
+
+    # Gọi API yêu cầu xác thực (ví dụ POST /auth/logout)
+    response = client.post(
+        "/auth/logout",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert response.status_code == 403
+    data = response.get_json()
+    assert data["code"] == "ACCOUNT_LOCKED"

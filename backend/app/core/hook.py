@@ -1,9 +1,17 @@
 import logging
 
-from flask import request, jsonify, g
+from flask import request, g
 from jose import ExpiredSignatureError, JWTError
 
 from app.core.security import decode_access_token
+from app.core.exceptions import (
+    InvalidTokenError,
+    TokenExpiredError,
+    TokenRevokedError,
+    AccountLockedError,
+    AuthException,
+    AppException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,30 +34,38 @@ def login_required():
 
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Thiếu token hoặc sai định dạng (Bearer <token>)"}), 401
+        raise InvalidTokenError("Thiếu token hoặc sai định dạng (Bearer <token>)")
 
     token = auth_header.split(" ")[1]
 
     try:
         payload = decode_access_token(token)
     except ExpiredSignatureError:
-        return jsonify({"error": "Token đã hết hạn, vui lòng đăng nhập lại"}), 401
+        raise TokenExpiredError()
     except (JWTError, ValueError):
-        return jsonify({"error": "Token không hợp lệ"}), 401
+        raise InvalidTokenError()
     except Exception:
         logger.exception("Lỗi không xác định khi giải mã token")
-        return jsonify({"error": "Lỗi xác thực token"}), 500
+        raise AuthException("Lỗi xác thực token")
 
     jti = payload.get("jti")
+    user_id = payload.get("sub")
 
-    # Kiểm tra token đã bị thu hồi (đăng xuất) chưa
     try:
+        # Kiểm tra token đã bị thu hồi (đăng xuất) chưa
         if redis_service.is_token_blacklisted(jti):
-            return jsonify({"error": "Token đã bị thu hồi, vui lòng đăng nhập lại"}), 401
+            raise TokenRevokedError()
+        
+        # Kiểm tra tài khoản đã bị khóa (disabled) chưa
+        if redis_service.is_account_locked(user_id):
+            raise AccountLockedError()
+    except AppException:
+        raise
     except Exception as e:
-        # Nếu có lỗi khi kiểm tra token trong Redis, log lỗi và trả về 500
+        # Nếu có lỗi khi kiểm tra token trong Redis, log lỗi và trả về AuthException
         logger.error(f"Lỗi kiểm tra token trong Redis: {e}")
-        return jsonify({"error": "Lỗi dịch vụ Redis"}), 500
+        raise AuthException("Lỗi dịch vụ Redis", code_error="REDIS_ERROR")
 
     # Lưu payload vào Flask g để các route sử dụng
     g.current_user = payload
+
