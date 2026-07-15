@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -15,3 +16,8 @@ class User(Base):
     is_admin = Column(Boolean, default=False, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+
+    # Định nghĩa trường không ghi nhận vào audit log
+    __audit_exclude__ = {"password", "last_login"}
+
+    audit_logs = relationship("AuditLog", back_populates="actor")
