@@ -19,10 +19,11 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
 
-        # --- redis ---
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_db: int = 0
+
+    # --- redis ---
+    redis_host: str
+    redis_port: int
+    redis_db: int
 
     # --- database url ---
     @property

@@ -1,4 +1,3 @@
-import sys
 
 import pytest
 from sqlalchemy import create_engine
@@ -93,3 +92,13 @@ def client(app):
     Tạo Flask client test
     """
     return app.test_client()
+
+@pytest.fixture(autouse=True)
+def mock_redis(mocker):
+    """
+    Tự động mock redis_service cho tất cả các tests để tránh kết nối tới Redis thật
+    """
+    mock = mocker.patch("app.services.redis_service.redis_service")
+    mock.is_token_blacklisted.return_value = False
+    
+    return mock

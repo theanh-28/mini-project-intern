@@ -40,7 +40,6 @@ def test_update_last_login(db_session, user_example):
 
     user_repo = UserRepository(db=db_session)
     user_repo.update_last_login(user_example)
-    user_repo.commit()
 
     db_session.refresh(user_example)
     assert user_example.last_login is not None
@@ -68,4 +67,4 @@ def test_get_by_id_not_found(db_session):
     user = user_repo.get_by_id(9999)
 
     assert user is None
-
+

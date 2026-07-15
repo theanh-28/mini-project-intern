@@ -1,11 +1,12 @@
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from pydantic import ValidationError
+from datetime import datetime, timezone
 
 from app.schemas.auth import LoginRequest, LoginResponse
-from app.services.user_service import get_user_service
 from app.core.security import create_access_token
+from app.services.user_service import get_user_service
 from app.core.exceptions import AuthException
 
 auth_bp = Blueprint('auth', __name__)
@@ -31,3 +32,32 @@ def login():
 
     response_data = LoginResponse(access_token=access_token, is_admin=user.is_admin)
     return jsonify(response_data.model_dump()), 200
+
+
+@auth_bp.route('/auth/logout', methods=['POST'])
+def logout():
+    try:
+        # Lây thông tin payload từ g object đã lưu trong login_required()
+        payload = g.get("current_user")
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+        user_id = payload.get("sub")
+        
+        user_service = get_user_service()
+        user_service.logout_user(jti, exp)
+
+        logger.info(f"User logged out: id={user_id}")
+                   
+    except Exception as e:
+        # Lỗi trong quá trình xử lý logout (redis service)
+        # Sau có thể thêm 1 bảng database lưu các jti của jwt đã logout
+        # để kiểm tra như 1 backlist dự phòng
+
+        logger.error(f"Lỗi xư lý bên server khi logout: {str(e)}")
+
+    finally:
+        # Nếu có lỗi thì vẫn trả về 200 để client xóa token khỏi local storage
+        # Chấp nhận rủ ro để tối ưu UX
+        return jsonify({"message": "Đăng xuất thành công"}), 200
+         
+
