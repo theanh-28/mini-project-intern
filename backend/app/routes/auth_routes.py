@@ -2,10 +2,11 @@ import logging
 
 from flask import Blueprint, request, jsonify, g
 
-from app.schemas.auth import LoginRequest, LoginResponse
+from app.schemas.auth import LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.security import create_access_token
 from app.services.user_service import get_user_service
 from app.core.exceptions import AuthException
+from app.core.config import settings
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -54,3 +55,44 @@ def logout():
     return jsonify({"message": "Đăng xuất thành công"}), 200
          
 
+@auth_bp.route('/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    """
+    Endpoint tiếp nhận yêu cầu quên mật khẩu của user, gửi link đặt lại mật khẩu khi xác nhận thành công
+    """
+    data = ForgotPasswordRequest.model_validate(request.json or {})
+
+    user_service = get_user_service()
+
+    reset_url = user_service.forgot_password_user(data.email)
+
+    response = {"message": "Nếu địa chỉ email tồn tại, một liên kết đặt lại mật khẩu đã được gửi"}
+
+    if settings.expose_reset_token_in_response:
+        response["reset_url"] = reset_url
+
+    return jsonify(response), 200
+
+
+@auth_bp.route('/auth/reset-password', methods=['POST'])
+def reset_password():
+    """
+    Endpoint để thực hiện yêu cầu reset mật khẩu của user
+    """
+    data = ResetPasswordRequest.model_validate(request.json or {})
+    reset_token = data.reset_token
+    new_password = data.new_password
+
+    user_service = get_user_service()
+    
+    # Xác thực token và lấy thông tin user
+    user = user_service.get_user_by_reset_token(reset_token=reset_token)
+
+    # Thiết lập g.current_user để Audit Log ghi nhận actor_id
+    g.current_user = {"sub": str(user.user_id)}
+
+    # Thực hiện đổi mật khẩu
+    user_service.reset_password_user(user=user, new_password=new_password, reset_token=reset_token)
+    
+    logger.info(f"User reset password: user_id = {user.user_id}")
+    return jsonify({"message": "Đã đổi mật khẩu thành công"}), 200

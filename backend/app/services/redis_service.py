@@ -5,7 +5,8 @@ from app.core.config import settings
 
 class RedisService():
     BLACKLIST_PREFIX = "blacklist:"
-    ACCOUNT_LOCK_PREFIX = "user:lock_at:"
+    REVOCATION_PREFIX = "user:revoke_at:"
+    RESET_TOKEN_FREFIX = "reset_token:"
 
     def __init__(self, client : redis.Redis | None = None):
         self.client = client or redis.Redis(
@@ -41,23 +42,43 @@ class RedisService():
     def is_token_blacklisted(self, jti: str):
         return self.client.exists(f"{self.BLACKLIST_PREFIX}{jti}") == 1
     
-    # --- Khóa tài khoản ---
-    def lock_account(self, user_id: int, ttl: int):
+    # --- Quản lý phiên đăng nhập (Session Revocation) ---
+    def revoke_user_sessions(self, user_id: int, ttl: int):
+        """
+        Ghi nhận thời điểm thu hồi phiên đăng nhập để vô hiệu hóa tất cả các JWT đã cấp trước đó.
+        """
         self.client.set(
-            name=f"{self.ACCOUNT_LOCK_PREFIX}{user_id}", 
+            name=f"{self.REVOCATION_PREFIX}{user_id}", 
             value=str(int(datetime.now(timezone.utc).timestamp())), 
             ex=ttl
         )
 
-    def unlock_account(self, user_id: int):
-        self.client.delete(name=f"{self.ACCOUNT_LOCK_PREFIX}{user_id}")
+    def restore_user_sessions(self, user_id: int):
+        """
+        Xóa mốc thời gian thu hồi, cho phép tài khoản hoạt động bình thường.
+        """
+        self.client.delete(name=f"{self.REVOCATION_PREFIX}{user_id}")
 
-    def is_account_locked(self, user_id: int, token_iat: int):
+    def is_session_revoked(self, user_id: int, token_iat: int):
         """
-        True nếu token được cấp trước thời điểm khóa -> cần revoke
+        True nếu token được cấp trước thời điểm thu hồi phiên đăng nhập -> cần hủy
         """
-        locked_at = self.client.get(name=f"{self.ACCOUNT_LOCK_PREFIX}{user_id}")
-        return bool(locked_at) and token_iat < int(locked_at)
+        revoked_at = self.client.get(name=f"{self.REVOCATION_PREFIX}{user_id}")
+        return bool(revoked_at) and token_iat < int(revoked_at)
+    
+    # --- Lưu reset password token ---
+    def save_reset_token(self, reset_token: str, user_id: int, ttl: int):
+        self.set(
+            key=f"{self.RESET_TOKEN_FREFIX}{reset_token}",
+            value=str(user_id),
+            expire=ttl
+        )
+
+    def get_user_id_by_reset_token(self, reset_token: str):
+        return self.get(key=f"{self.RESET_TOKEN_FREFIX}{reset_token}")
+    
+    def invalidate_reset_token(self, reset_token: str):
+        self.delete(key=f"{self.RESET_TOKEN_FREFIX}{reset_token}")
 
 
 redis_service = RedisService()

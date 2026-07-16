@@ -45,15 +45,16 @@ def get_changed_values(obj):
     old_values = {}
     new_values = {}
 
-    # Lấy danh sách các trường nhạy cảm cần loại
+    # Lấy danh sách các trường nhạy cảm cần loại hoặc che giấu
     exclude_fields = getattr(obj, "__audit_exclude__", set())
+    mask_fields = getattr(obj, "__audit_mask__", set())
 
     # Duyệt qua các thuộc tính đại diện cho column của model
     for prop in obj.__mapper__.iterate_properties:
         if hasattr(prop, "columns"):
             attr_name = prop.key
 
-            # Bỏ qua trường nhạy cảm
+            # Bỏ qua trường nhạy cảm loại trừ
             if attr_name in exclude_fields:
                 continue
 
@@ -61,11 +62,17 @@ def get_changed_values(obj):
             if history.has_changes():
                 # history.deleted chứa giá trị cũ trước khi thay đổi
                 if history.deleted:
-                    old_values[attr_name] = serialize_field(history.deleted[0])
+                    if attr_name in mask_fields:
+                        old_values[attr_name] = "[REDACTED]"
+                    else:
+                        old_values[attr_name] = serialize_field(history.deleted[0])
 
                 # history.added chứa giá trị mới được gán
                 if history.added:
-                    new_values[attr_name] = serialize_field(history.added[0])
+                    if attr_name in mask_fields:
+                        new_values[attr_name] = "[REDACTED]"
+                    else:
+                        new_values[attr_name] = serialize_field(history.added[0])
     
     return (old_values, new_values)
 
@@ -83,6 +90,7 @@ def before_flush_listener(session, flush_context, instances=None):
             continue    # Không log chính bảng audit_logs tránh vòng lặp
 
         exclude_fields = getattr(obj, "__audit_exclude__", set())
+        mask_fields = getattr(obj, "__audit_mask__", set())
         new_values = {}
 
         # Lấy tất cả giá trị ban đầu trừ trường nhạy cảm
@@ -90,7 +98,10 @@ def before_flush_listener(session, flush_context, instances=None):
             if hasattr(prop, "columns"):
                 attr_name = prop.key
                 if attr_name not in exclude_fields:
-                    new_values[attr_name] = serialize_field(getattr(obj, attr_name))
+                    if attr_name in mask_fields:
+                        new_values[attr_name] = "[REDACTED]"
+                    else:
+                        new_values[attr_name] = serialize_field(getattr(obj, attr_name))
 
         log = AuditLog(
             actor_id=actor_id,
@@ -128,6 +139,7 @@ def before_flush_listener(session, flush_context, instances=None):
             continue    # Không log chính bảng audit_logs tránh vòng lặp
 
         exclude_fields = getattr(obj, "__audit_exclude__", set())
+        mask_fields = getattr(obj, "__audit_mask__", set())
         old_values = {}
 
         # Ghi lại toàn bộ dữ liệu trước khi xóa
@@ -135,7 +147,10 @@ def before_flush_listener(session, flush_context, instances=None):
             if hasattr(prop, "columns"):
                 attr_name = prop.key
                 if attr_name not in exclude_fields:
-                    old_values[attr_name] = serialize_field(getattr(obj, attr_name))
+                    if attr_name in mask_fields:
+                        old_values[attr_name] = "[REDACTED]"
+                    else:
+                        old_values[attr_name] = serialize_field(getattr(obj, attr_name))
 
         log = AuditLog(
             actor_id=actor_id,

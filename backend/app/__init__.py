@@ -54,7 +54,7 @@ def create_app():
     @app.errorhandler(ValidationError)
     def handle_validation_error(e):
         return jsonify({
-            "error": e.errors(),
+            "error": e.errors(include_context=False),
             "code": "VALIDATION_ERROR"
         }), 400
 

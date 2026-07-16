@@ -284,22 +284,22 @@ def test_update_user_to_inactive_calls_redis_revocation(client, admin_token, ins
     )
     assert response.status_code == 200
 
-    # Kiểm tra Redis Service được gọi đúng hàm lock_account với TTL 3600 giây (60 phút * 60)
-    mock_redis.lock_account.assert_called_once_with(user_id=3, ttl=3600)
+    # Kiểm tra Redis Service được gọi đúng hàm revoke_user_sessions với TTL 3600 giây (60 phút * 60)
+    mock_redis.revoke_user_sessions.assert_called_once_with(user_id=3, ttl=3600)
 
 
 def test_request_blocked_when_user_is_cached_disabled_in_redis(client, access_token, mock_redis):
     """
-    Khi token gửi lên thuộc về user đã được cache trạng thái khóa (is_active=False) trong Redis -> 403 Forbidden
+    Khi token gửi lên thuộc về user đã bị thu hồi phiên đăng nhập trong Redis -> 401 Unauthorized
     """
-    # Giả lập Redis phản hồi rằng user này đã bị khóa
-    mock_redis.is_account_locked.return_value = True
+    # Giả lập Redis phản hồi rằng phiên đăng nhập của user này đã bị thu hồi
+    mock_redis.is_session_revoked.return_value = True
 
     # Gọi API yêu cầu xác thực (ví dụ POST /auth/logout)
     response = client.post(
         "/auth/logout",
         headers={"Authorization": f"Bearer {access_token}"}
     )
-    assert response.status_code == 403
+    assert response.status_code == 401
     data = response.get_json()
-    assert data["code"] == "ACCOUNT_LOCKED"
+    assert data["code"] == "TOKEN_REVOKED"

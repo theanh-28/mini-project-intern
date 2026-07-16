@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     redis_port: int
     redis_db: int
 
+    # --- reset password ---
+    reset_token_expire_second: int
+    expose_reset_token_in_response: bool
+    frontend_url: str
+
     # --- database url ---
     @property
     def database_url(self) -> str:

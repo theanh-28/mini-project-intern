@@ -229,7 +229,7 @@ def test_update_user_success(make_user_service, user_example):
         get_by_id=user_example,
         get_by_email=None,
         get_by_name=None,
-        update=user_example
+        update_profile=user_example
     )
 
     result = user_service.update_user(
@@ -241,7 +241,7 @@ def test_update_user_success(make_user_service, user_example):
     )
 
     assert result == user_example
-    user_service.user_repository.update.assert_called_once_with(
+    user_service.user_repository.update_profile.assert_called_once_with(
         user=user_example,
         name="new_name",
         email="new_email@example.com",
@@ -264,7 +264,7 @@ def test_update_user_self_disable_raise_self_disable_error(make_user_service, us
             is_active=False  # Khóa tài khoản
         )
 
-    user_service.user_repository.update.assert_not_called()
+    user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_not_found_raise_user_not_found_error(make_user_service):
     """
@@ -282,7 +282,7 @@ def test_update_user_when_not_found_raise_user_not_found_error(make_user_service
             is_active=True
         )
 
-    user_service.user_repository.update.assert_not_called()
+    user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_target_is_admin_raise_privilege_violation_error(make_user_service, user_example):
     """
@@ -301,7 +301,7 @@ def test_update_user_when_target_is_admin_raise_privilege_violation_error(make_u
             is_active=True
         )
 
-    user_service.user_repository.update.assert_not_called()
+    user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_email_exists_raise_duplicate_email_error(make_user_service, user_example):
     """
@@ -326,7 +326,7 @@ def test_update_user_when_email_exists_raise_duplicate_email_error(make_user_ser
             is_active=True
         )
 
-    user_service.user_repository.update.assert_not_called()
+    user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_name_exists_raise_duplicate_name_error(make_user_service, user_example):
     """
@@ -351,7 +351,7 @@ def test_update_user_when_name_exists_raise_duplicate_name_error(make_user_servi
             is_active=True
         )
 
-    user_service.user_repository.update.assert_not_called()
+    user_service.user_repository.update_profile.assert_not_called()
 
 
 def test_update_user_same_user_different_case_email_success(make_user_service, user_example):
@@ -364,7 +364,7 @@ def test_update_user_same_user_different_case_email_success(make_user_service, u
     user_service = make_user_service(
         get_by_id=user_example,
         get_by_email=user_example,  # Trả về chính nó
-        update=user_example
+        update_profile=user_example
     )
 
     result = user_service.update_user(
@@ -376,7 +376,7 @@ def test_update_user_same_user_different_case_email_success(make_user_service, u
     )
 
     assert result == user_example
-    user_service.user_repository.update.assert_called_once_with(
+    user_service.user_repository.update_profile.assert_called_once_with(
         user=user_example,
         name=user_example.name,
         email="User_1@Example.com",
@@ -394,7 +394,7 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
     user_service = make_user_service(
         get_by_id=user_example,
         get_by_name=user_example,  # Trả về chính nó
-        update=user_example
+        update_profile=user_example
     )
 
     result = user_service.update_user(
@@ -406,9 +406,145 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
     )
 
     assert result == user_example
-    user_service.user_repository.update.assert_called_once_with(
+    user_service.user_repository.update_profile.assert_called_once_with(
         user=user_example,
         name="User_1",
         email=user_example.email,
         is_active=True
+    )
+
+
+# ====== TEST HÀM FORGOT_PASSWORD_USER ======
+
+def test_forgot_password_user_success(make_user_service, user_example):
+    """
+    Tìm thấy email và user đang active -> sinh reset URL và lưu token vào Redis
+    """
+    user_example.is_active = True
+    user_service = make_user_service(get_by_email=user_example)
+
+    reset_url = user_service.forgot_password_user(email=user_example.email)
+
+    assert reset_url is not None
+    assert "/reset-password?token=" in reset_url
+    
+    # Kiểm tra Redis save_reset_token được gọi
+    user_service.redis_service.save_reset_token.assert_called_once()
+    call_kwargs = user_service.redis_service.save_reset_token.call_args[1]
+    assert call_kwargs["user_id"] == user_example.user_id
+
+
+def test_forgot_password_user_not_found(make_user_service):
+    """
+    Email không tồn tại -> Trả về None và không lưu gì vào Redis
+    """
+    user_service = make_user_service(get_by_email=None)
+
+    reset_url = user_service.forgot_password_user(email="nonexistent@example.com")
+
+    assert reset_url is None
+    user_service.redis_service.save_reset_token.assert_not_called()
+
+
+def test_forgot_password_user_inactive(make_user_service, user_example):
+    """
+    Email tồn tại nhưng tài khoản bị inactive (khóa) -> Trả về None và không lưu gì vào Redis
+    """
+    user_example.is_active = False
+    user_service = make_user_service(get_by_email=user_example)
+
+    reset_url = user_service.forgot_password_user(email=user_example.email)
+
+    assert reset_url is None
+    user_service.redis_service.save_reset_token.assert_not_called()
+
+
+# ====== TEST HÀM GET_USER_BY_RESET_TOKEN ======
+
+def test_get_user_by_reset_token_success(make_user_service, user_example):
+    """
+    Token hợp lệ và user đang active -> Trả về đối tượng User
+    """
+    user_example.is_active = True
+    user_service = make_user_service(get_by_id=user_example)
+    user_service.redis_service.get_user_id_by_reset_token.return_value = str(user_example.user_id)
+
+    user = user_service.get_user_by_reset_token(reset_token="valid_token")
+
+    assert user == user_example
+    user_service.redis_service.get_user_id_by_reset_token.assert_called_once_with(reset_token="valid_token")
+    user_service.user_repository.get_by_id.assert_called_once_with(id=str(user_example.user_id))
+
+
+def test_get_user_by_reset_token_invalid_token(make_user_service):
+    """
+    Token không tồn tại hoặc hết hạn -> Ném lỗi InvalidTokenError
+    """
+    from app.core.exceptions import InvalidTokenError
+    user_service = make_user_service()
+    user_service.redis_service.get_user_id_by_reset_token.return_value = None
+
+    with pytest.raises(InvalidTokenError) as excinfo:
+        user_service.get_user_by_reset_token(reset_token="expired_token")
+
+    user_service.user_repository.get_by_id.assert_not_called()
+
+
+def test_get_user_by_reset_token_user_not_found(make_user_service):
+    """
+    Token hợp lệ nhưng không tìm thấy User tương ứng trong DB -> Ném lỗi UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+    user_service = make_user_service(get_by_id=None)
+    user_service.redis_service.get_user_id_by_reset_token.return_value = "999"
+
+    with pytest.raises(UserNotFoundError) as excinfo:
+        user_service.get_user_by_reset_token(reset_token="valid_token")
+
+
+def test_get_user_by_reset_token_user_inactive(make_user_service, user_example):
+    """
+    Token hợp lệ nhưng tài khoản User bị khóa (inactive) -> Ném lỗi UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+    user_example.is_active = False
+    user_service = make_user_service(get_by_id=user_example)
+    user_service.redis_service.get_user_id_by_reset_token.return_value = str(user_example.user_id)
+
+    with pytest.raises(UserNotFoundError) as excinfo:
+        user_service.get_user_by_reset_token(reset_token="valid_token")
+
+
+# ====== TEST HÀM RESET_PASSWORD_USER ======
+
+def test_reset_password_user_success(make_user_service, user_example):
+    """
+    Thực hiện reset mật khẩu thành công: lưu mật khẩu đã băm, thu hồi session và hủy reset token
+    """
+    user_service = make_user_service()
+
+    result = user_service.reset_password_user(
+        user=user_example,
+        new_password="new_password_123",
+        reset_token="token_to_invalidate"
+    )
+
+    assert result is None
+
+    # Kiểm tra gọi repository lưu mật khẩu băm (mật khẩu không lưu plain-text)
+    user_service.user_repository.update_password.assert_called_once()
+    call_args = user_service.user_repository.update_password.call_args[1]
+    assert call_args["user"] == user_example
+    assert call_args["password"] != "new_password_123"
+    assert call_args["password"].startswith("$2b$")  # bcrypt hash format
+
+    # Kiểm tra gọi thu hồi session trên Redis
+    user_service.redis_service.revoke_user_sessions.assert_called_once_with(
+        user_id=user_example.user_id,
+        ttl=3600
+    )
+
+    # Kiểm tra hủy reset token trên Redis
+    user_service.redis_service.invalidate_reset_token.assert_called_once_with(
+        reset_token="token_to_invalidate"
     )

@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
+import secrets
 
-from app.core.security import verify_password, hash_password
-from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
+from app.core.security import verify_password, hash_password, build_reset_password_url
+from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError, InvalidTokenError
 from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, PrivilegeViolationError
 from app.core.exceptions import DuplicateEmailError, DuplicateNameError
 from app.core.exceptions import UserNotFoundError
+from app.core.config import settings
 
 class UserService:
     def __init__(self, user_repository, redis_service):
@@ -29,6 +31,57 @@ class UserService:
         self.user_repository.update_last_login(user)
         return user
     
+    def forgot_password_user(self, email: str):
+        """
+        Kiểm tra email có tồn tại không
+        Trả về reset_url nếu tồn tại, None nếu không (có trường hợp is_active đang là False)
+        """
+        user =  self.user_repository.get_by_email(email=email)
+
+        if not user or not user.is_active:
+            return None
+
+        # Tạo reset token 
+        reset_token = secrets.token_urlsafe(32)
+
+        self.redis_service.save_reset_token(
+            reset_token=reset_token, 
+            user_id=user.user_id, 
+            ttl=settings.reset_token_expire_second
+        )
+
+        reset_url = build_reset_password_url(reset_token=reset_token)
+        return reset_url
+
+    def get_user_by_reset_token(self, reset_token: str):
+        """
+        Kiểm tra reset_token có tồn tại trong cache không và trả về User
+        """
+        user_id = self.redis_service.get_user_id_by_reset_token(reset_token=reset_token)
+
+        if not user_id:
+            raise InvalidTokenError("Token đã hết hiệu lực hoặc không tồn tại token này")
+
+        user = self.user_repository.get_by_id(id=user_id)
+        if not user or not user.is_active:
+            raise UserNotFoundError("Tài khoản không tồn tại")
+
+        return user
+
+    def reset_password_user(self, user, new_password: str, reset_token: str):
+        """
+        Thực hiện reset password cho user, hủy các JWT cũ và vô hiệu hóa reset token
+        """
+        hashed_password = hash_password(new_password)
+        self.user_repository.update_password(user=user, password=hashed_password)
+
+        # Thu hồi toàn bộ JWT access token cũ đang hoạt động
+        jwt_ttl_seconds = settings.access_token_expire_minutes * 60
+        self.redis_service.revoke_user_sessions(user_id=user.user_id, ttl=jwt_ttl_seconds)
+
+        # Vô hiệu hóa reset token
+        self.redis_service.invalidate_reset_token(reset_token=reset_token)
+
     def logout_user(self, jti: str, exp: int):
         """
         Thêm token vào blacklist trong Redis nếu chưa hết hạn.
@@ -113,17 +166,16 @@ class UserService:
         status_changed = user.is_active != is_active
 
         # Cập nhật thông tin user vào database
-        updated_user = self.user_repository.update(user=user, name=name, email=email, is_active=is_active)
+        updated_user = self.user_repository.update_profile(user=user, name=name, email=email, is_active=is_active)
 
         # Xử lí Redis nếu trạng thái của tài khoản thay đổi sau cập nhật
         if status_changed:
             if not is_active:
-                from app.core.config import settings
                 jwt_ttl_seconds = settings.access_token_expire_minutes * 60
                 
-                self.redis_service.lock_account(user_id=user_id, ttl=jwt_ttl_seconds)
+                self.redis_service.revoke_user_sessions(user_id=user_id, ttl=jwt_ttl_seconds)
             else:
-                self.redis_service.unlock_account(user_id=user_id)
+                self.redis_service.restore_user_sessions(user_id=user_id)
 
         return updated_user
     
