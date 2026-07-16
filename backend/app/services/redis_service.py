@@ -21,6 +21,9 @@ class RedisService():
     def delete(self, key: str):
         self.client.delete(key)
 
+    def expire(self, key: str, ttl: int):
+        self.client.expire(name=key, time=ttl)  # Gia hạn thoi gian sống của key trong Redis
+
     def blacklist_token(self, jti: str, ttl: int):
         self.client.set(name=f"{self.BLACKLIST_PREFIX}{jti}", value="1", ex=ttl)
 

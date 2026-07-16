@@ -13,6 +13,9 @@ class BaseRepository:
     def get_by_id(self, id):
         return self.db.get(self.model, id)
     
+    def count(self) -> int:
+        return self.db.query(self.model).count()
+
     def get_page(self, page:int = 1, limit: int = 100):
         skip = (page - 1) * limit
         return self.db.query(self.model).offset(skip).limit(limit).all()
