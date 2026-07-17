@@ -64,8 +64,10 @@ def db_session():
     # 3. Tạo session kết nối
     TestSessionLocal = sessionmaker(bind=engine,
                                     autocommit=False,
-                                    autoflush=False)
+                                    autoflush=False,
+                                    expire_on_commit=False)
     session = TestSessionLocal()
+
 
     try:
         # 4. Cấp session cho hàm test
