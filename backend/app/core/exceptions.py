@@ -43,6 +43,15 @@ class ValidationException(AppException):
     def __init__(self, message: str, status_code: int = 400, code_error: str = "VALIDATION_ERROR"):
         super().__init__(message, status_code=status_code, code_error=code_error)
 
+class ConflictException(AppException):
+    """
+    Lỗi xung đột dữ liệu - 409.
+    Dùng khi request hợp lệ nhưng xung đột với trạng thái hiện tại của resource.
+    (name tồn tại, email tồn tại khi tạo tài khoản mới,...)
+    """
+    def __init__(self, message: str, status_code: int = 409, code_error: str = "CONFLICT_ERROR"):
+        super().__init__(message, status_code=status_code, code_error=code_error)
+
 
 # ---------------------------------------------------------------------------
 # Concrete exceptions
@@ -76,3 +85,15 @@ class InvalidInputError(ValidationException):
     """Ngoại lệ khi input không hợp lệ"""
     def __init__(self, message: str = "Input không hợp lệ", code_error: str = "INVALID_INPUT"):
         super().__init__(message, status_code=400, code_error=code_error)
+
+
+class DuplicateNameError(ConflictException):
+    """Ngoại lệ khi tạo tài khoản trùng tên đã tồn tại"""
+    def __init__(self, message: str = "Tên đã tồn tại"):
+        super().__init__(message, code_error="DUPLICATE_NAME")
+
+
+class DuplicateEmailError(ConflictException):
+    """Ngoại lệ khi tạo tài khoản trùng email đã tồn tại"""
+    def __init__(self, message: str = "Email đã tồn tại"):
+        super().__init__(message, code_error="DUPLICATE_EMAIL")
