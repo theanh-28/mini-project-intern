@@ -163,5 +163,5 @@ def test_when_create_user_success_then_cache_is_invalidated(client, admin_token,
     assert response.status_code == 201
 
     # Kiểm tra delete_pattern được gọi với đúng key pattern
-    mock_redis.delete_pattern.assert_called_once_with("users:list:page=*:per_page=*")
+    mock_redis.delete_pattern.assert_called_once_with("users:list:*")
 

@@ -40,7 +40,13 @@ class UserService:
         if ttl > 0:
             self.redis_service.blacklist_token(jti, ttl)
 
-    def get_list_user(self, is_admin: bool, page: int, per_page: int):
+    def get_list_user(
+        self,
+        is_admin: bool,
+        page: int,
+        per_page: int,
+        filters: dict = None
+    ):
         """
         Lấy danh sách user.
         Trả về tuple (users, total).
@@ -48,9 +54,7 @@ class UserService:
         if not is_admin:
             raise AdminAccessRequiredError("Yêu cầu quyền admin để truy cập danh sách user")
 
-        total = self.user_repository.count()
-        users = self.user_repository.get_page(page, per_page)
-        return users, total
+        return self.user_repository.get_page_with_count(page, per_page, filters=filters)
     
     def create_user(self, name: str, email: str, password: str):
         """

@@ -11,12 +11,18 @@ from app.routes.decorators import cache_response, invalidate_cache, require_admi
 admin_bp = Blueprint('admin', __name__)
 logger = logging.getLogger(__name__)
 
+def make_cache_key(req, **kwargs):
+    # Dựng cache key từ tất cả tham số query để tránh đè cache khi đổi filter
+    params = [f"{k}={v}" for k, v in sorted(req.args.items())]
+    return f"users:list:{':'.join(params)}" if params else "users:list:default"
+
+
 @admin_bp.route('/admin/users', methods=['GET'])
 @require_admin
-@cache_response(key_builder=lambda req, **kwargs: f"users:list:page={req.args.get('page', 1)}:per_page={req.args.get('per_page', 20)}", ttl=60)
+@cache_response(key_builder=make_cache_key, ttl=60)
 def get_users():
     """
-    Endpoint để lấy danh sách user với phân trang.
+    Endpoint để lấy danh sách user với phân trang và lọc dữ liệu.
     """
     data = UserListRequest(**(request.args or {}))
 
@@ -26,8 +32,20 @@ def get_users():
 
     user_service = get_user_service()
 
+    filters = {
+        "is_active": data.is_active,
+        "is_admin": data.is_admin,
+        "created_at_from": data.created_at_from,
+        "created_at_to": data.created_at_to,
+    }
+
     try:
-        users, total = user_service.get_list_user(is_admin, data.page, data.per_page)
+        users, total = user_service.get_list_user(
+            is_admin=is_admin,
+            page=data.page,
+            per_page=data.per_page,
+            filters=filters
+        )
     except AppException as e:
         return jsonify({"error": e.message, "code": e.code_error}), e.status_code
 
@@ -43,7 +61,7 @@ def get_users():
 
 @admin_bp.route("/admin/users", methods=["POST"])
 @require_admin
-@invalidate_cache(key="users:list:page=*:per_page=*")
+@invalidate_cache(key="users:list:*")
 def create_user():
     """
     Endpoint để tạo user mới.

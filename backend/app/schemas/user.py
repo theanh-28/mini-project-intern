@@ -17,6 +17,10 @@ class UserResponse(BaseModel):
 class UserListRequest(BaseModel):
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=20, ge=1, le=100)
+    is_active: bool | None = None
+    is_admin: bool | None = None
+    created_at_from: datetime | None = None
+    created_at_to: datetime | None = None
 
 class UserListResponse(BaseModel):
     users: list[UserResponse]

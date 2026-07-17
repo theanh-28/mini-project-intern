@@ -137,7 +137,7 @@ def test_get_list_user_when_admin_return_users_and_total(make_user_service, user
     Admin (is_admin=True) => trả về tuple (users, total) từ repository
     """
     users = [user_example]
-    user_service = make_user_service(count=1, get_page=users)
+    user_service = make_user_service(get_page_with_count=(users, 1))
 
     result_users, result_total = user_service.get_list_user(is_admin=True, page=1, per_page=20)
 
@@ -147,14 +147,13 @@ def test_get_list_user_when_admin_return_users_and_total(make_user_service, user
 
 def test_get_list_user_calls_repository_with_correct_params(make_user_service):
     """
-    Kiểm tra get_list_user truyền đúng page + per_page vào repository.get_page
+    Kiểm tra get_list_user truyền đúng page + per_page vào repository.get_page_with_count
     """
-    user_service = make_user_service(count=5, get_page=[])
+    user_service = make_user_service(get_page_with_count=([], 5))
 
     user_service.get_list_user(is_admin=True, page=2, per_page=10)
 
-    user_service.user_repository.count.assert_called_once()
-    user_service.user_repository.get_page.assert_called_once_with(2, 10)
+    user_service.user_repository.get_page_with_count.assert_called_once_with(2, 10, filters=None)
 
 
 # ======    TEST HÀM CREATE_USER    ======
