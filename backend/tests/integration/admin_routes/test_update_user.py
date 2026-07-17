@@ -178,17 +178,21 @@ def test_when_success_then_cache_is_invalidated(client, admin_token, mock_redis,
         }
     )
     assert response.status_code == 200
-    mock_redis.delete_pattern.assert_called_once_with("users:list:page=*:per_page=*")
+    mock_redis.delete_pattern.assert_called_once_with("users:list:*")
 
 
 # ====== Test Admin Self Disable / Lockout ======
 
-def test_when_admin_tries_to_disable_self_return_403(client, admin_token, insert_users):
+def test_when_admin_tries_to_disable_self_return_403(client, admin_token, insert_users, db_session, admin_example):
     """
     Admin tự khóa tài khoản của chính mình => 403 Forbidden và báo lỗi SELF_DISABLE_NOT_ALLOWED
     """
+    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
+    db_session.add(admin_example)
+    db_session.commit()
+
     response = client.put(
-        "/admin/users/2",  # ID của admin_example là 2 (khớp với sub trong token)
+        "/admin/users/999",  # ID của admin_example là 999 (khớp với sub trong token)
         headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "name": "admin_1_updated",
@@ -201,12 +205,16 @@ def test_when_admin_tries_to_disable_self_return_403(client, admin_token, insert
     assert data["code"] == "SELF_DISABLE_NOT_ALLOWED"
 
 
-def test_when_admin_updates_self_with_active_true_success(client, admin_token, insert_users):
+def test_when_admin_updates_self_with_active_true_success(client, admin_token, insert_users, db_session, admin_example):
     """
     Admin tự cập nhật thông tin của mình nhưng vẫn giữ is_active=True => Thành công 200 OK
     """
+    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
+    db_session.add(admin_example)
+    db_session.commit()
+
     response = client.put(
-        "/admin/users/2",  # ID của admin_example là 2
+        "/admin/users/999",  # ID của admin_example là 999
         headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "name": "admin_updated_name",

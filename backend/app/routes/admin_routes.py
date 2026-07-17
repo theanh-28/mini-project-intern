@@ -88,7 +88,7 @@ def create_user():
 
 @admin_bp.route("/admin/users/<int:user_id>", methods=["PUT"])
 @require_admin
-@invalidate_cache(key="users:list:page=*:per_page=*")
+@invalidate_cache(key="users:list:*")
 def update_user(user_id: int):
     """
     Endpoint để cập nhật thông tin của user.
