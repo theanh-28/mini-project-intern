@@ -28,9 +28,12 @@ def get_current_actor_id():
     """
     try:
         current_user = getattr(g, "current_user", None)
-        return int(current_user.get("sub")) if current_user else None
-    except RuntimeError:
-        # Trường hợp chạy ngoài request context
+        if current_user:
+            sub = current_user.get("sub")
+            if sub is not None:
+                return int(sub)
+    except (RuntimeError, ValueError, TypeError):
+        # Tránh crash nếu ngoài request context hoặc sub bị thiếu/sai định dạng
         pass
     return None
 
@@ -157,13 +160,15 @@ def after_flush_listener(session, flush_context):
 
     for obj, log in pending_logs:
         if log.target_id is None:
-            pk_name = obj.__mapper__.primary_key[0].name
-            pk_value = str(getattr(obj, pk_name))
+            pk_cols = obj.__mapper__.primary_key
+            pk_values = [str(getattr(obj, col.name)) for col in pk_cols]
+            pk_value = "-".join(pk_values)
 
             log.target_id = pk_value
             if isinstance(log.new_value, dict):
                 # Tránh trường hợp delete => new_value = None
-                log.new_value[pk_name] = pk_value
+                for col in pk_cols:
+                    log.new_value[col.name] = str(getattr(obj, col.name))
         
         session.add(log)
 

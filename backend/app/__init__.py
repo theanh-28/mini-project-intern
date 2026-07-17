@@ -7,6 +7,14 @@ from app.core.exceptions import AppException
 from app.core.config import settings
 from pydantic import ValidationError
 
+# Đăng ký lắng nghe 2 sự kiện trước và sau flush
+from sqlalchemy import event
+from sqlalchemy.orm import Session
+from app.db.audit_listener import before_flush_listener, after_flush_listener
+
+event.listen(Session, "before_flush", before_flush_listener)
+event.listen(Session, "after_flush", after_flush_listener)
+
 logger = logging.getLogger(__name__)
 
 def create_app():
@@ -79,13 +87,5 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
-
-    # Đăng ký lắng nghe 2 sự kiện trước và sau flush
-    from sqlalchemy import event
-    from sqlalchemy.orm import Session
-    from app.db.audit_listener import before_flush_listener, after_flush_listener
-
-    event.listen(Session, "before_flush", before_flush_listener)
-    event.listen(Session, "after_flush", after_flush_listener)
 
     return app

@@ -21,12 +21,13 @@ def test_when_create_user_then_create_audit_log_generated(db_session, user_examp
     db_session.add(user_example)
     db_session.commit()
 
-    log = db_session.query(AuditLog).filter_by(
+    logs = db_session.query(AuditLog).filter_by(
         table_name="users", 
         target_id=str(user_example.user_id)
-    ).first()
+    ).all()
     
-    assert log is not None
+    assert len(logs) == 1
+    log = logs[0]
     assert log.action == "CREATE"
     assert log.new_value is not None
     assert log.new_value["name"] == "user_1"
@@ -51,12 +52,14 @@ def test_when_update_user_then_update_audit_log_generated(db_session, user_examp
     user_example.email = "test_audit_updated@example.com"
     db_session.commit()
 
-    log = db_session.query(AuditLog).filter_by(
+    update_logs = db_session.query(AuditLog).filter_by(
         table_name="users",
-        target_id=str(user_example.user_id)
-    ).order_by(AuditLog.id.desc()).first()
+        target_id=str(user_example.user_id),
+        action="UPDATE"
+    ).all()
     
-    assert log is not None
+    assert len(update_logs) == 1
+    log = update_logs[0]
     assert log.action == "UPDATE"
     assert log.old_value["name"] == "user_1"
     assert log.new_value["name"] == "test_audit_updated"
@@ -97,12 +100,14 @@ def test_when_delete_user_then_delete_audit_log_generated(db_session, user_examp
     db_session.delete(user_example)
     db_session.commit()
 
-    log = db_session.query(AuditLog).filter_by(
+    delete_logs = db_session.query(AuditLog).filter_by(
         table_name="users",
-        target_id=str(user_example.user_id)
-    ).order_by(AuditLog.id.desc()).first()
+        target_id=str(user_example.user_id),
+        action="DELETE"
+    ).all()
     
-    assert log is not None
+    assert len(delete_logs) == 1
+    log = delete_logs[0]
     assert log.action == "DELETE"
     assert log.old_value["name"] == "user_1"
     assert "password" not in log.old_value
@@ -138,7 +143,7 @@ def test_when_api_request_processed_then_actor_id_captured_correctly(client, adm
     db_session.query(AuditLog).delete()
     db_session.commit()
 
-    # 2. Admin (admin_example có ID là 2) gửi request PUT cập nhật thông tin của User 1
+    # 2. Admin (admin_example có ID là 999) gửi request PUT cập nhật thông tin của User 1
     response = client.put(
         f"/admin/users/{user_example.user_id}",
         headers={"Authorization": f"Bearer {admin_token}"},
@@ -150,12 +155,14 @@ def test_when_api_request_processed_then_actor_id_captured_correctly(client, adm
     )
     assert response.status_code == 200
 
-    log = db_session.query(AuditLog).filter_by(
+    api_update_logs = db_session.query(AuditLog).filter_by(
         table_name="users",
-        target_id=str(user_example.user_id)
-    ).order_by(AuditLog.id.desc()).first()
+        target_id=str(user_example.user_id),
+        action="UPDATE"
+    ).all()
     
-    assert log is not None
+    assert len(api_update_logs) == 1
+    log = api_update_logs[0]
     assert log.action == "UPDATE"
-    assert log.actor_id == 2
+    assert log.actor_id == 999
     assert log.new_value["name"] == "user_updated_by_admin"
