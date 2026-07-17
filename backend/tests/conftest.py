@@ -27,7 +27,7 @@ def admin_example():
     Admin seed
     """
     return User(
-        user_id=2,
+        user_id=999,
         name="admin_1",
         email="admin_1@example.com",
         password=hash_password("123456"),

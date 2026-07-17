@@ -32,6 +32,6 @@ class Settings(BaseSettings):
             f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
-    model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"))
+    model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"), extra="ignore")
 
 settings = Settings()

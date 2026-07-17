@@ -2,6 +2,7 @@ import json
 import math
 
 import pytest
+from app.models import User
 
 
 # ====== Test Authorization ======
@@ -281,4 +282,96 @@ def test_get_users_when_non_admin_and_cache_exists_return_403(client, access_tok
     assert data["code"] == "ADMIN_ACCESS_REQUIRED"
 
     mock_redis.get.assert_not_called()
+
+
+# ====== Test Query Filtering ======
+
+def test_get_users_filter_by_is_admin(client, admin_token, admin_example, db_session, insert_users, mock_redis):
+    """
+    Lọc danh sách theo quyền admin (is_admin)
+    """
+    mock_redis.get.return_value = None
+
+    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
+    db_session.add(admin_example)
+    db_session.commit()
+
+    # Lọc các user KHÔNG phải admin -> Phải trả về 15 user thường
+    response_non_admin = client.get(
+        "/admin/users",
+        query_string={"is_admin": "false"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response_non_admin.status_code == 200
+    data_non_admin = response_non_admin.get_json()
+    assert data_non_admin["total"] == 15
+
+    # Lọc các user LÀ admin -> Trả về 1 (chính là tài khoản admin đang gọi API)
+    response_admin = client.get(
+        "/admin/users",
+        query_string={"is_admin": "true"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response_admin.status_code == 200
+    data_admin = response_admin.get_json()
+    assert data_admin["total"] == 1
+
+
+def test_get_users_filter_by_created_at_range(client, admin_token, insert_users, mock_redis):
+    """
+    Lọc danh sách theo khoảng ngày khởi tạo (created_at_from / created_at_to)
+    """
+    from datetime import timedelta
+
+    mock_redis.get.return_value = None
+
+    target_user = insert_users[0]
+    start_time_str = (target_user.created_at - timedelta(seconds=10)).isoformat()
+    end_time_str = (target_user.created_at + timedelta(seconds=10)).isoformat()
+
+    response = client.get(
+        "/admin/users",
+        query_string={
+            "created_at_from": start_time_str,
+            "created_at_to": end_time_str
+        },
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["total"] == 15
+
+
+def test_get_users_filter_by_is_active(client, admin_token, db_session, insert_users, mock_redis):
+    """
+    Lọc danh sách theo trạng thái hoạt động (is_active)
+    """
+    mock_redis.get.return_value = None
+
+    # Vô hiệu hóa user_1 (user_id = 1)
+    db_session.query(User).filter_by(user_id=1).update({"is_active": False})
+    db_session.commit()
+
+    # 1. Lọc is_active=False -> Chỉ trả về 1 user bị vô hiệu hóa
+    response = client.get(
+        "/admin/users",
+        query_string={"is_active": "false"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["total"] == 1
+    assert data["users"][0]["user_id"] == 1
+
+    # 2. Lọc is_active=True -> Trả về 14 user còn lại
+    response_active = client.get(
+        "/admin/users",
+        query_string={"is_active": "true"},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response_active.status_code == 200
+    data_active = response_active.get_json()
+    assert data_active["total"] == 14
+
 

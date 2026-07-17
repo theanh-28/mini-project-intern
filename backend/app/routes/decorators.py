@@ -59,6 +59,7 @@ def cache_response(key_builder, ttl: int = 60):
                         "content_type": response.headers.get("Content-Type", "application/json")
                     }
                     redis_service.set(cache_key, json.dumps(cache_data), ttl)
+                    logger.info(f"Đã cache response key {cache_key} trong Redis với TTL {ttl} giây")
                 except Exception as e:
                     logger.error(f"Lỗi ghi vào Redis cache: {e}")
 
@@ -84,3 +85,31 @@ def require_admin(func):
     
     return wrapper
 
+def invalidate_cache(key: str):
+    """
+    Decorator để xóa cache của route trong Redis.
+    key: key cache cần xóa.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            from app.services.redis_service import redis_service
+            
+            response_val = func(*args, **kwargs)
+            response = make_response(response_val)
+            
+            if response.status_code in (200, 201, 204):
+                try:
+                    if "*" in key:
+                        redis_service.delete_pattern(key)
+                        logger.info(f"Đã xóa cache pattern {key} trong Redis")
+                    else:
+                        redis_service.delete(key)
+                        logger.info(f"Đã xóa cache key {key} trong Redis")
+                except Exception as e:
+                    logger.error(f"Lỗi xóa cache key {key} trong Redis: {e}")
+
+            return response
+
+        return wrapper
+    return decorator
