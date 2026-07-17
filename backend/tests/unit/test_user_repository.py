@@ -172,7 +172,6 @@ def test_create_persists_to_database(db_session):
     assert fetched.email == "new@example.com"
 
 
-<<<<<<< HEAD
 # ======    TEST HÀM GET_PAGE_WITH_COUNT    ======
 
 def test_get_page_with_count(inserted_user, db_session):
@@ -224,10 +223,7 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
     assert len(items_none) == 0
 
 
-# ======    TEST HÀM UPDATE     ======
-=======
 # ======    TEST HÀM UPDATE_PROFILE     ======
->>>>>>> edf8c26 (feat(auth): implement forgot and reset password flows with session invalidation)
 
 def test_update_success(inserted_user, db_session):
     """
@@ -253,8 +249,6 @@ def test_update_success(inserted_user, db_session):
     assert inserted_user.name == "updated_name"
     assert inserted_user.email == "updated_email@example.com"
     assert inserted_user.is_active is False
-<<<<<<< HEAD
-=======
 
 
 # ======    TEST HÀM UPDATE_PASSWORD     ======
@@ -272,4 +266,3 @@ def test_update_password_success(inserted_user, db_session):
 
     db_session.refresh(inserted_user)
     assert inserted_user.password == "new_hashed_password"
->>>>>>> edf8c26 (feat(auth): implement forgot and reset password flows with session invalidation)
