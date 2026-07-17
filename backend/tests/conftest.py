@@ -109,6 +109,7 @@ def mock_redis(mocker):
     mock = mocker.patch("app.services.redis_service.redis_service")
 
     mock.is_token_blacklisted.return_value = False
+    mock.is_account_locked.return_value = False
     mock.get.return_value = None
 
     return mock

@@ -221,3 +221,31 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
     items_none, total_none = user_repo.get_page_with_count(page=1, limit=10, filters={"is_active": False})
     assert total_none == 0
     assert len(items_none) == 0
+
+
+# ======    TEST HÀM UPDATE     ======
+
+def test_update_success(inserted_user, db_session):
+    """
+    Cập nhật thành công các thông tin name, email, is_active của user và lưu vào database
+    """
+    user_repo = UserRepository(db=db_session)
+
+    # Thực hiện gọi hàm update
+    updated_user = user_repo.update(
+        user=inserted_user,
+        name="updated_name",
+        email="updated_email@example.com",
+        is_active=False
+    )
+
+    # 1. Kiểm tra đối tượng trả về từ hàm update
+    assert updated_user.name == "updated_name"
+    assert updated_user.email == "updated_email@example.com"
+    assert updated_user.is_active is False
+
+    # 2. Truy vấn lại từ database để đảm bảo dữ liệu thực sự đã được persist
+    db_session.refresh(inserted_user)
+    assert inserted_user.name == "updated_name"
+    assert inserted_user.email == "updated_email@example.com"
+    assert inserted_user.is_active is False

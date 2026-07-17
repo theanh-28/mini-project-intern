@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @auth_bp.route('/auth/login', methods=['POST'])
 def login():
-    data = LoginRequest(**(request.json or {}))
+    data = LoginRequest.model_validate(request.json or {})
     
     user_service = get_user_service()
     
