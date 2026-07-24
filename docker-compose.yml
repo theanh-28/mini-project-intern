@@ -1,4 +1,50 @@
 services:
+  kong-config-generator:
+    image: alpine:3.18
+    container_name: kong-config-generator
+    volumes:
+      - ./kong-gateway:/workspace
+    env_file:
+      - ./kong-gateway/.env
+    entrypoint:
+      - sh
+      - -c
+      - |
+        sed -e 's|\$${IAM_SERVICE_URL}|'"$$IAM_SERVICE_URL"'|g' \
+            -e 's|\$${KONG_JWT_SECRET}|'"$$KONG_JWT_SECRET"'|g' \
+            -e 's|\$${KONG_REDIS_HOST}|'"$$KONG_REDIS_HOST"'|g' \
+            -e 's|\$${KONG_REDIS_PORT}|'"$$KONG_REDIS_PORT"'|g' \
+            -e 's|\$${KONG_REDIS_DB}|'"$$KONG_REDIS_DB"'|g' \
+            /workspace/kong.template.yml > /workspace/kong_temp.yml &&
+        mv /workspace/kong_temp.yml /workspace/kong.yml
+
+  kong-gateway:
+    image: kong:3.7
+    container_name: kong-gateway
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    env_file:
+      - ./kong-gateway/.env
+    environment:
+      KONG_PLUGINS: bundled,jwt-revocation,jwt-to-header
+    volumes:
+      - ./kong-gateway/kong.yml:/usr/local/kong/declarative/kong.yml
+      - ./kong-gateway/plugins/jwt-revocation:/usr/local/share/lua/5.1/kong/plugins/jwt-revocation
+      - ./kong-gateway/plugins/jwt-to-header:/usr/local/share/lua/5.1/kong/plugins/jwt-to-header
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      kong-config-generator:
+        condition: service_completed_successfully
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   backend:
     build: ./backend
     container_name: intern_backend

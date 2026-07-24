@@ -9,7 +9,8 @@ def create_access_token(user_id: int,
                         is_admin: bool,
                         secret_key: str = settings.secret_key,
                         algorithm: str = settings.algorithm,
-                        access_token_expire_minutes: int = settings.access_token_expire_minutes) -> str:
+                        access_token_expire_minutes: int = settings.access_token_expire_minutes,
+                        iss: str = settings.iss) -> str:
     """
     Tao access token cho người dùng dựa trên user_id và quyền admin.
     Token sẽ hết hạn sau một khoảng thời gian được định nghĩa trong settings.
@@ -26,7 +27,8 @@ def create_access_token(user_id: int,
         "sub": str(user_id),
         "is_admin": is_admin,
         "exp": int(expire.timestamp()),
-        "iat": int(datetime.now(timezone.utc).timestamp())
+        "iat": int(datetime.now(timezone.utc).timestamp()),
+        "iss": iss
     }
 
     return jwt.encode(payload, secret_key, algorithm=algorithm)
