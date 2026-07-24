@@ -21,3 +21,6 @@ __pycache__/
 # test/build
 build/
 dist/
+
+# yml
+kong.yml

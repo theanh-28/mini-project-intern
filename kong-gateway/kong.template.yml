@@ -1,0 +1,77 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: iam-services
+    url: ${IAM_SERVICE_URL}
+    routes:
+      - name: public-routes
+        paths:
+          - /auth/login
+        methods:
+          - POST
+        strip_path: false  
+        plugins:
+          - name: rate-limiting
+            config:
+              second: 5
+              minute: 10
+              limit_by: ip
+              policy: redis
+              redis_host: ${KONG_REDIS_HOST}
+              redis_port: ${KONG_REDIS_PORT}
+              redis_database: ${KONG_REDIS_DB}
+              error_code: 429
+              error_message: "Bạn đã vượt quá giới hạn request, vui lòng thử lại sau."
+
+
+      - name: protected-routes
+        paths:
+          - /auth/logout
+          - /admin/users
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE  
+        strip_path: false
+        plugins: 
+          - name: jwt
+            config: 
+              key_claim_name: iss
+              claims_to_verify: 
+                - exp
+              header_names: 
+                - Authorization
+
+          - name: jwt-revocation
+            config:
+              redis_host: ${KONG_REDIS_HOST}
+              redis_port: ${KONG_REDIS_PORT}
+              redis_db: ${KONG_REDIS_DB}
+
+          - name: jwt-to-header
+            config:
+              claims:
+                - sub:x-user-id
+
+          - name: rate-limiting
+            config:
+              second: 5
+              minute: 10
+              limit_by: header
+              header_name: x-user-id
+              policy: redis
+              redis_host: ${KONG_REDIS_HOST}
+              redis_port: ${KONG_REDIS_PORT}
+              redis_database: ${KONG_REDIS_DB}
+              error_code: 429
+              error_message: "Bạn đã vượt quá giới hạn request, vui lòng thử lại sau."
+
+
+consumers:
+  - username: iam
+    jwt_secrets:
+      - key: iam_service
+        secret: ${KONG_JWT_SECRET}
+        algorithm: ${KONG_JWT_ALGORITHM}
