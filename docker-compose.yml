@@ -12,6 +12,7 @@ services:
       - |
         sed -e 's|\$${IAM_SERVICE_URL}|'"$$IAM_SERVICE_URL"'|g' \
             -e 's|\$${KONG_JWT_SECRET}|'"$$KONG_JWT_SECRET"'|g' \
+            -e 's|\$${KONG_JWT_ALGORITHM}|'"$$KONG_JWT_ALGORITHM"'|g' \
             -e 's|\$${KONG_REDIS_HOST}|'"$$KONG_REDIS_HOST"'|g' \
             -e 's|\$${KONG_REDIS_PORT}|'"$$KONG_REDIS_PORT"'|g' \
             -e 's|\$${KONG_REDIS_DB}|'"$$KONG_REDIS_DB"'|g' \

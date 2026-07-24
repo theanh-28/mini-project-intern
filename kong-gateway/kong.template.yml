@@ -74,4 +74,4 @@ consumers:
     jwt_secrets:
       - key: iam_service
         secret: ${KONG_JWT_SECRET}
-        algorithm: HS256
+        algorithm: ${KONG_JWT_ALGORITHM}
