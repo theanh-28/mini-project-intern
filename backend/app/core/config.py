@@ -28,8 +28,16 @@ class Settings(BaseSettings):
 
     # --- reset password ---
     reset_token_expire_second: int
-    expose_reset_token_in_response: bool
     frontend_url: str
+
+    # --- smtp server ---
+    mail_server: str
+    mail_port: int
+    mail_use_tls: bool
+    mail_use_ssl: bool
+    mail_username: str | None = None
+    mail_password: str | None = None
+    mail_default_sender: str | None = None
 
     # --- database url ---
     @property

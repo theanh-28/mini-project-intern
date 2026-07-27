@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 import secrets
 
-from app.core.security import verify_password, hash_password, build_reset_password_url
+from app.core.security import verify_password, hash_password
 from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError, InvalidTokenError
 from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, PrivilegeViolationError
 from app.core.exceptions import DuplicateEmailError, DuplicateNameError
 from app.core.exceptions import UserNotFoundError
 from app.core.config import settings
+from app.utils.link_builder import build_reset_password_url
 
 class UserService:
     def __init__(self, user_repository, redis_service):
@@ -174,8 +175,6 @@ class UserService:
                 jwt_ttl_seconds = settings.access_token_expire_minutes * 60
                 
                 self.redis_service.revoke_user_sessions(user_id=user_id, ttl=jwt_ttl_seconds)
-            else:
-                self.redis_service.restore_user_sessions(user_id=user_id)
 
         return updated_user
     

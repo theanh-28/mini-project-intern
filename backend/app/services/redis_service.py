@@ -52,13 +52,7 @@ class RedisService():
             value=str(int(datetime.now(timezone.utc).timestamp())), 
             ex=ttl
         )
-
-    def restore_user_sessions(self, user_id: int):
-        """
-        Xóa mốc thời gian thu hồi, cho phép tài khoản hoạt động bình thường.
-        """
-        self.client.delete(name=f"{self.REVOCATION_PREFIX}{user_id}")
-
+        
     def is_session_revoked(self, user_id: int, token_iat: int):
         """
         True nếu token được cấp trước thời điểm thu hồi phiên đăng nhập -> cần hủy

@@ -64,10 +64,3 @@ def verify_password(raw_password: str, hashed_password: str) -> bool:
     Kiểm tra mật khẩu người dùng.
     """
     return bcrypt.checkpw(raw_password.encode('utf-8'), hashed_password.encode('utf-8'))
-
-def build_reset_password_url(reset_token: str):
-    """
-    Tạo url reset password
-    """
-    FRONTEND_PATH = "reset-password"
-    return f"{settings.frontend_url}/{FRONTEND_PATH}?token={reset_token}"

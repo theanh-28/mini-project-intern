@@ -1,12 +1,14 @@
 import logging
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, render_template
+from flask_mail import Message
 
 from app.schemas.auth import LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.security import create_access_token
 from app.services.user_service import get_user_service
 from app.core.exceptions import AuthException
 from app.core.config import settings
+from app.core.extensions import mail
 
 auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -68,8 +70,15 @@ def forgot_password():
 
     response = {"message": "Nếu địa chỉ email tồn tại, một liên kết đặt lại mật khẩu đã được gửi"}
 
-    if settings.expose_reset_token_in_response:
-        response["reset_url"] = reset_url
+    if reset_url:
+        msg = Message(
+            subject="Reset pasword",
+            recipients=[data.email],
+            body=render_template("emails/reset_password.txt", reset_url=reset_url),
+            html=render_template("emails/reset_password.html", reset_url=reset_url),
+        )
+
+        mail.send(msg)
 
     return jsonify(response), 200
 

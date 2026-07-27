@@ -414,6 +414,34 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
     )
 
 
+def test_update_user_to_inactive_calls_redis_revoke(make_user_service, user_example):
+    """
+    Khi thay đổi trạng thái user từ active (True) sang inactive (False) -> gọi revoke_user_sessions
+    """
+    user_example.is_active = True
+    user_example.is_admin = False
+    user_service = make_user_service(
+        get_by_id=user_example,
+        get_by_email=None,
+        get_by_name=None,
+        update_profile=user_example
+    )
+
+    user_service.update_user(
+        actor_id=999,
+        user_id=user_example.user_id,
+        name="User_1",
+        email=user_example.email,
+        is_active=False  # Chuyển sang inactive
+    )
+
+    # Kiểm tra gọi revoke_user_sessions với TTL 3600 (settings.access_token_expire_minutes * 60)
+    user_service.redis_service.revoke_user_sessions.assert_called_once_with(
+        user_id=user_example.user_id,
+        ttl=3600
+    )
+
+
 # ====== TEST HÀM FORGOT_PASSWORD_USER ======
 
 def test_forgot_password_user_success(make_user_service, user_example):
