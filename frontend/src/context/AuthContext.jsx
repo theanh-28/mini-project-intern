@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { authService } from '../services/authService';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
             const data = await authService.login(email, password);
             // Lưu token và thông tin user vào localStorage
             localStorage.setItem('token', data.access_token);
-            
+
             const loggedUser = {
                 user_id: data.user.user_id,
                 email: data.user.email || email,
@@ -48,8 +48,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(loggedUser));
             setUser(loggedUser);
             return loggedUser;
-        } catch (error) {
-            throw error;
         } finally {
             setLoading(false);
         }
@@ -68,10 +66,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{user, loading, login, logout}}>
+        <AuthContext.Provider value={{ user, loading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth phải được sử dụng bên trong một AuthProvider');
+    }
+    return context;
+};

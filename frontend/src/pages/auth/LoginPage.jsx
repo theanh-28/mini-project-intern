@@ -1,37 +1,24 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
 
-import { useAuth } from '../../context/AuthContext';
+import { useLogin } from '../../hooks/useLogin';
+import { PATHS } from '../../constants/routes';
+import Input from '../../components/common/Input';
+import Button from '../../components/common/Button';
 import styles from './LoginPage.module.css';
 
 const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errorMsg, setErrorMsg] = useState('');
-    const { login, loading } = useAuth();
-    const [showPassword, setShowPassword] = useState(false);
-    const navigate = useNavigate();
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrorMsg('');
-
-        if (!email || !password) {
-            setErrorMsg("Vui lòng điền đầy đủ thông tin");
-            return;
-        }
-
-        try {
-            const user = await login(email, password);
-            // Đăng nhập thành công, điều hướng 
-            navigate('/admin/users');
-        } catch (err) {
-            // Lấy thông tin lỗi
-            const errMsg = err.response?.data?.error || 'Email hoặc mật khẩu không chính xác';
-            setErrorMsg(errMsg);
-        }
-    };
+    const {
+        email,
+        setEmail,
+        password,
+        setPassword,
+        errorMsg,
+        showPassword,
+        toggleShowPassword,
+        loading,
+        handleSubmit,
+    } = useLogin();
 
     return (
         <section className={styles.card}>
@@ -40,41 +27,37 @@ const LoginPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form} noValidate>
-                <div className={styles.inputGroup}>
-                    <label htmlFor='email'>Email</label>
-                    <input
-                        type='email'
-                        id='email'
-                        placeholder='abc@example.com'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        disabled={loading}
-                        required
-                    />
-                </div>
+                <Input
+                    label="Email"
+                    type="email"
+                    id="email"
+                    placeholder="abc@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                />
 
-                <div className={styles.inputGroup}>
-                    <label htmlFor='password'>Password</label>
-                    <div className={styles.passwordWrapper}>
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            id='password'
-                            placeholder='*********'
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={loading}
-                            required
-                        />
-                        <button 
-                            className={styles.toggleBtn} 
-                            type='button' 
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            tabIndex={-1} // Không cho tab dừng lại ở icon này
-                        >
-                            {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-                        </button>
-                    </div>
-                </div>
+                <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    placeholder="*********"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                    style={{ paddingRight: '2.5rem' }}
+                >
+                    <button
+                        className={styles.toggleBtn}
+                        type="button"
+                        onClick={toggleShowPassword}
+                        tabIndex={-1}
+                    >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </Input>
 
                 {errorMsg && (
                     <div className={styles.errorMsg}>
@@ -83,15 +66,15 @@ const LoginPage = () => {
                 )}
 
                 <div className={styles.forgotLink}>
-                    <Link to='/auth/forgot-password'>Quên mật khẩu</Link>
+                    <Link to={PATHS.FORGOT_PASSWORD}>Quên mật khẩu</Link>
                 </div>
 
-                <button type='submit' className={styles.btnSubmit} disabled={loading}>
-                    {loading ? <span className={styles.spinner}></span> : 'Đăng Nhập'}
-                </button>
+                <Button type="submit" loading={loading}>
+                    Đăng Nhập
+                </Button>
             </form>
         </section>
-    )
+    );
 };
 
 export default LoginPage;

@@ -23,7 +23,7 @@
   font-size: 2rem;
   font-weight: 700;
   color: var(--color-text);
-  background: linear-gradient(135deg, var(--color-primary) 0% , var(--color-primary-hover) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -36,63 +36,23 @@
   gap: 2vh;
 }
 
-.inputGroup {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 1svh;
-}
-
-.inputGroup label {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.inputGroup input {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  border: 2px solid var(--color-bg);
-  background-color: #ffffff;
-  color: var(--color-text);
-  font-size: 1rem;
-  transition: transform 0.1s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.inputGroup input:hover {
-  transform: translateY(-2px);
-}
-
-.inputGroup input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 3px 0 rgba(37, 162, 235, 0.5);
-}
-
-.passwordWrapper {
-  position: relative;
-  width: 100%;
-}
-
-.passwordWrapper input {
-  width: 100%;
-  padding-right: 2rem; 
-}
-
-.inputGroup button {
+.toggleBtn {
   position: absolute;
-  top: 25%;
-  right: 2%;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
   color: var(--color-text-muted);
   transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.inputGroup button:hover {
-  color: var(--color-primary)
+.toggleBtn:hover {
+  color: var(--color-primary);
 }
 
 .forgotLink {
@@ -120,53 +80,4 @@
   width: fit-content;
   padding: 3px 24px;
   align-self: center;
-
-}
-
-.btnSubmit {
-  width: 100%;
-  border-radius: 12px;
-  padding: 2svh;
-  border: none;
-  background-color: var(--color-primary);
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-}
-
-.btnSubmit:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 120px rgba(37, 162, 235, 0.2);
-}
-
-.btnSubmit:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btnSubmit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.spinner {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #ffffff;
-  animation: spin 0.8s linear infinite;
-  box-sizing: border-box;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }

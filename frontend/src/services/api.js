@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { PATHS } from '../constants/routes';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
@@ -7,7 +8,7 @@ const api = axios.create({
     },
 });
 
-// Resquest Interceptor: Tự động đính thêm token JWT vào mỗi request
+// Request Interceptor: Tự động đính thêm token JWT vào mỗi request
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -18,7 +19,7 @@ api.interceptors.request.use(
         return config;
     },
     (error) => Promise.reject(error)
-)
+);
 
 // Response Interceptor: Xử lý các lỗi trả về toàn cục
 api.interceptors.response.use(
@@ -27,7 +28,7 @@ api.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             const url = error.config?.url || '';
 
-            // Request đăng nhập bị 401 (sai mật khẩu)
+            // Request thuộc nhóm /auth/ bị 401 (sai mật khẩu)
             if (url.includes('/auth/')) {
                 return Promise.reject(error);
             }
@@ -35,7 +36,7 @@ api.interceptors.response.use(
             // Các API khác bị 401 (token hết hạn hoặc bị thu hồi)
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/auth/login';
+            window.location.href = PATHS.LOGIN;
         }
 
         return Promise.reject(error);

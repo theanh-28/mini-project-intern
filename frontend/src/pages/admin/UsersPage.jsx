@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { PATHS } from '../../constants/routes';
 
 export default function UsersPage() {
     const { user, logout } = useAuth();
@@ -7,7 +8,7 @@ export default function UsersPage() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/auth/login');
+        navigate(PATHS.LOGIN);
     };
 
     return (
