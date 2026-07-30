@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, request, jsonify, g, render_template
 from flask_mail import Message
 
-from app.schemas.auth import LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest
+from app.schemas.auth import LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest, UserInfo
 from app.core.security import create_access_token
 from app.services.user_service import get_user_service
 from app.core.exceptions import AuthException
@@ -28,7 +28,13 @@ def login():
     access_token = create_access_token(user.user_id, user.is_admin)
     logger.info("User logged in: id=%s, is_admin=%s", user.user_id, user.is_admin)
 
-    response_data = LoginResponse(access_token=access_token, is_admin=user.is_admin)
+    response_data = LoginResponse(access_token=access_token,
+                                  user=UserInfo(
+                                      user_id=user.user_id,
+                                      name=user.name,
+                                      email=user.email,
+                                      is_admin=user.is_admin
+                                  ))
     return jsonify(response_data.model_dump()), 200
 
 

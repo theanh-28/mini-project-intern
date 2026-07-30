@@ -21,7 +21,10 @@ def test_login_when_credentials_is_valid_return_200_and_token(client, insert_use
 
     assert response.status_code == 200
     assert 'access_token' in data
-    assert data['is_admin'] is False
+    assert data['user']['user_id'] == insert_user.user_id
+    assert data['user']['name'] == insert_user.name
+    assert data['user']['email'] == insert_user.email
+    assert data['user']['is_admin'] is False
 
 
 def test_login_when_user_is_admin_return_200_and_is_admin_true(client, insert_admin):
@@ -40,7 +43,10 @@ def test_login_when_user_is_admin_return_200_and_is_admin_true(client, insert_ad
 
     assert response.status_code == 200
     assert 'access_token' in data
-    assert data['is_admin'] is True
+    assert data['user']['user_id'] == insert_admin.user_id
+    assert data['user']['name'] == insert_admin.name
+    assert data['user']['email'] == insert_admin.email
+    assert data['user']['is_admin'] is True
 
 
 def test_login_when_email_is_incorrect_return_404(client):
