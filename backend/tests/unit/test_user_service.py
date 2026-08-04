@@ -412,3 +412,152 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
         email=user_example.email,
         is_active=True
     )
+
+
+# ======    TEST HÀM DELETE_USER    ======
+
+def test_delete_user_success(make_user_service, user_example):
+    """
+    Xóa mềm tài khoản hợp lệ (actor_id khác user_id, user tồn tại và không phải admin)
+    => Đã gọi soft_delete và lock_account trong Redis
+    """
+    user_example.is_admin = False
+    user_service = make_user_service(get_by_id=user_example)
+
+    user_service.delete_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.soft_delete.assert_called_once_with(user=user_example)
+    user_service.redis_service.lock_account.assert_called_once()
+
+
+def test_delete_user_self_delete_raises_self_disable_error(make_user_service):
+    """
+    Tự xóa tài khoản của chính mình (actor_id == user_id) => SelfDisableError
+    """
+    from app.core.exceptions import SelfDisableError
+
+    user_service = make_user_service()
+
+    with pytest.raises(SelfDisableError):
+        user_service.delete_user(actor_id=1, user_id=1)
+
+    user_service.user_repository.soft_delete.assert_not_called()
+
+
+def test_delete_user_not_found_raises_user_not_found_error(make_user_service):
+    """
+    Xóa tài khoản không tồn tại => UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+
+    user_service = make_user_service(get_by_id=None)
+
+    with pytest.raises(UserNotFoundError):
+        user_service.delete_user(actor_id=999, user_id=9999)
+
+    user_service.user_repository.soft_delete.assert_not_called()
+
+
+def test_delete_user_admin_target_raises_privilege_violation_error(make_user_service, user_example):
+    """
+    Xóa tài khoản Admin khác => PrivilegeViolationError
+    """
+    from app.core.exceptions import PrivilegeViolationError
+
+    user_example.is_admin = True
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(PrivilegeViolationError):
+        user_service.delete_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.soft_delete.assert_not_called()
+
+
+def test_delete_user_already_inactive_skips_soft_delete(make_user_service, user_example):
+    """
+    Tài khoản đã ở trạng thái xóa mềm (is_active = False) từ trước
+    => Bỏ qua không gọi soft_delete và redis lock
+    """
+    user_example.is_admin = False
+    user_example.is_active = False
+    user_service = make_user_service(get_by_id=user_example)
+
+    user_service.delete_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.soft_delete.assert_not_called()
+    user_service.redis_service.lock_account.assert_not_called()
+    user_example.is_active = True
+
+
+# ======    TEST HÀM RESTORE_USER   ======
+
+def test_restore_user_success(make_user_service, user_example):
+    """
+    Khôi phục tài khoản hợp lệ (actor_id khác user_id, user tồn tại và không phải admin)
+    => Đã gọi repository.restore
+    """
+    user_example.is_admin = False
+    user_example.is_active = False
+    user_service = make_user_service(get_by_id=user_example)
+
+    user_service.restore_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.restore.assert_called_once_with(user=user_example)
+    user_example.is_active = True
+
+
+def test_restore_user_already_active_skips_restore(make_user_service, user_example):
+    """
+    Tài khoản đã ở trạng thái hoạt động (is_active = True) từ trước
+    => Bỏ qua không gọi repository.restore
+    """
+    user_example.is_admin = False
+    user_example.is_active = True
+    user_service = make_user_service(get_by_id=user_example)
+
+    user_service.restore_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.restore.assert_not_called()
+
+
+def test_restore_user_self_restore_raises_self_restore_error(make_user_service):
+    """
+    Tự khôi phục tài khoản của chính mình (actor_id == user_id) => SelfRestoreError
+    """
+    from app.core.exceptions import SelfRestoreError
+
+    user_service = make_user_service()
+
+    with pytest.raises(SelfRestoreError):
+        user_service.restore_user(actor_id=1, user_id=1)
+
+    user_service.user_repository.restore.assert_not_called()
+
+
+def test_restore_user_not_found_raises_user_not_found_error(make_user_service):
+    """
+    Khôi phục tài khoản không tồn tại => UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+
+    user_service = make_user_service(get_by_id=None)
+
+    with pytest.raises(UserNotFoundError):
+        user_service.restore_user(actor_id=999, user_id=9999)
+
+    user_service.user_repository.restore.assert_not_called()
+
+
+def test_restore_user_admin_target_raises_privilege_violation_error(make_user_service, user_example):
+    """
+    Khôi phục tài khoản Admin khác => PrivilegeViolationError
+    """
+    from app.core.exceptions import PrivilegeViolationError
+
+    user_example.is_admin = True
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(PrivilegeViolationError):
+        user_service.restore_user(actor_id=999, user_id=user_example.user_id)
+
+    user_service.user_repository.restore.assert_not_called()

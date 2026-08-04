@@ -130,6 +130,12 @@ class SelfDisableError(PermissionException):
         super().__init__(message, status_code=403, code_error="SELF_DISABLE_NOT_ALLOWED")
 
 
+class SelfRestoreError(PermissionException):
+    """Ngoại lệ khi admin tự khôi phục tài khoản của chính mình"""
+    def __init__(self, message: str = "Admin không thể tự khôi phục tài khoản của chính mình"):
+        super().__init__(message, status_code=403, code_error="SELF_RESTORE_NOT_ALLOWED")
+
+
 class PrivilegeViolationError(PermissionException):
     """Ngoại lệ khi thục hiện hành động vượt quá cấp bậc quyền hạn"""
     def __init__(self, message: str = "Không có quyền thực hiện thao tác này"):
