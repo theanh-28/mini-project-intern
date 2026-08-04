@@ -207,7 +207,7 @@ class UserService:
         if self.redis_service:
             from app.core.config import settings
             jwt_ttl_seconds = settings.access_token_expire_minutes * 60
-            self.redis_service.lock_account(user_id=user_id, ttl=jwt_ttl_seconds)
+            self.redis_service.revoke_user_sessions(user_id=user_id, ttl=jwt_ttl_seconds)
 
     def restore_user(self, actor_id: int, user_id: int):
         """

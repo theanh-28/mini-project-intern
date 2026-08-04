@@ -581,7 +581,7 @@ def test_reset_password_user_success(make_user_service, user_example):
 def test_delete_user_success(make_user_service, user_example):
     """
     Xóa mềm tài khoản hợp lệ (actor_id khác user_id, user tồn tại và không phải admin)
-    => Đã gọi soft_delete và lock_account trong Redis
+    => Đã gọi soft_delete và revoke_user_sessions trong Redis
     """
     user_example.is_admin = False
     user_service = make_user_service(get_by_id=user_example)
@@ -589,7 +589,7 @@ def test_delete_user_success(make_user_service, user_example):
     user_service.delete_user(actor_id=999, user_id=user_example.user_id)
 
     user_service.user_repository.soft_delete.assert_called_once_with(user=user_example)
-    user_service.redis_service.lock_account.assert_called_once()
+    user_service.redis_service.revoke_user_sessions.assert_called_once()
 
 
 def test_delete_user_self_delete_raises_self_disable_error(make_user_service):
@@ -638,7 +638,7 @@ def test_delete_user_admin_target_raises_privilege_violation_error(make_user_ser
 def test_delete_user_already_inactive_skips_soft_delete(make_user_service, user_example):
     """
     Tài khoản đã ở trạng thái xóa mềm (is_active = False) từ trước
-    => Bỏ qua không gọi soft_delete và redis lock
+    => Bỏ qua không gọi soft_delete và redis revoke_user_sessions
     """
     user_example.is_admin = False
     user_example.is_active = False
@@ -647,7 +647,7 @@ def test_delete_user_already_inactive_skips_soft_delete(make_user_service, user_
     user_service.delete_user(actor_id=999, user_id=user_example.user_id)
 
     user_service.user_repository.soft_delete.assert_not_called()
-    user_service.redis_service.lock_account.assert_not_called()
+    user_service.redis_service.revoke_user_sessions.assert_not_called()
     user_example.is_active = True
 
 
