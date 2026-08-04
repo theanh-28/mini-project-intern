@@ -223,7 +223,7 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
     assert len(items_none) == 0
 
 
-# ======    TEST HÀM UPDATE     ======
+# ======    TEST HÀM UPDATE_PROFILE     ======
 
 def test_update_success(inserted_user, db_session):
     """
@@ -232,7 +232,7 @@ def test_update_success(inserted_user, db_session):
     user_repo = UserRepository(db=db_session)
 
     # Thực hiện gọi hàm update
-    updated_user = user_repo.update(
+    updated_user = user_repo.update_profile(
         user=inserted_user,
         name="updated_name",
         email="updated_email@example.com",
@@ -249,3 +249,20 @@ def test_update_success(inserted_user, db_session):
     assert inserted_user.name == "updated_name"
     assert inserted_user.email == "updated_email@example.com"
     assert inserted_user.is_active is False
+
+
+# ======    TEST HÀM UPDATE_PASSWORD     ======
+
+def test_update_password_success(inserted_user, db_session):
+    """
+    Cập nhật thành công mật khẩu mới của user và lưu vào database
+    """
+    user_repo = UserRepository(db=db_session)
+
+    user_repo.update_password(
+        user=inserted_user,
+        password="new_hashed_password"
+    )
+
+    db_session.refresh(inserted_user)
+    assert inserted_user.password == "new_hashed_password"

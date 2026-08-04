@@ -26,6 +26,19 @@ class Settings(BaseSettings):
     redis_port: int
     redis_db: int
 
+    # --- reset password ---
+    reset_token_expire_second: int
+    frontend_url: str
+
+    # --- smtp server ---
+    mail_server: str
+    mail_port: int
+    mail_use_tls: bool
+    mail_use_ssl: bool
+    mail_username: str | None = None
+    mail_password: str | None = None
+    mail_default_sender: str | None = None
+
     # --- database url ---
     @property
     def database_url(self) -> str:

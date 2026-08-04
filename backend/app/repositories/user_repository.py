@@ -32,13 +32,17 @@ class UserRepository(BaseRepository):
         user.last_login = datetime.now(timezone.utc)
         self.db.commit()
     
-    def update(self, user: User, name: str, email: str, is_active: bool) -> User:
+    def update_profile(self, user: User, name: str, email: str, is_active: bool) -> User:
         user.name = name
         user.email = email 
         user.is_active = is_active
         self.db.commit()
         self.db.refresh(user)
         return user
+    
+    def update_password(self, user: User, password: str) -> None:
+        user.password = password
+        self.db.commit()
 
     def soft_delete(self, user: User) -> None:
         user.is_active = False

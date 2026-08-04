@@ -16,8 +16,12 @@ class User(Base):
     is_admin = Column(Boolean, default=False, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+    
 
-    # Định nghĩa trường không ghi nhận vào audit log
-    __audit_exclude__ = {"password", "last_login"}
+    # Định nghĩa các trường loại trừ hoàn toàn khỏi audit log
+    __audit_exclude__ = {"last_login"}
+
+    # Định nghĩa các trường cần dùng mặt nạ bảo vệ
+    __audit_mask__ = {"password"}
 
     audit_logs = relationship("AuditLog", back_populates="actor")

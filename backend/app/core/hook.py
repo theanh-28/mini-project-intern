@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 PUBLIC_ENDPOINTS = [
     "index",
     "auth.login",
+    "auth.forgot_password",
+    "auth.reset_password"
 ]
 
 
@@ -57,9 +59,9 @@ def login_required():
         if redis_service.is_token_blacklisted(jti):
             raise TokenRevokedError()
         
-        # Kiểm tra tài khoản đã bị khóa (disabled) chưa
-        if redis_service.is_account_locked(user_id, token_iat):
-            raise AccountLockedError()
+        # Kiểm tra xem phiên đăng nhập có bị thu hồi (đổi mật khẩu hoặc bị khóa) không
+        if redis_service.is_session_revoked(user_id, token_iat):
+            raise TokenRevokedError("Phiên đăng nhập đã bị thu hồi hoặc hết hạn")
     except AppException:
         raise
     except Exception as e:

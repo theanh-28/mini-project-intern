@@ -27,6 +27,10 @@ def create_app():
     # Cấu hình ứng dụng
     app.config['DEBUG'] = settings.debug
 
+    # Khởi tạo các extensions
+    from app.core.extensions import init_mail
+    init_mail(app)
+
     # Đăng ký before_request 
     from app.core.hook import login_required
     
@@ -54,7 +58,7 @@ def create_app():
     @app.errorhandler(ValidationError)
     def handle_validation_error(e):
         return jsonify({
-            "error": e.errors(),
+            "error": e.errors(include_context=False),
             "code": "VALIDATION_ERROR"
         }), 400
 
