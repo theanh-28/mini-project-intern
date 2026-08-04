@@ -1,0 +1,27 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--color-bg);
+}
+
+
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+}
+
+.header {
+    height: 56px;
+}
+
+.sidebar {
+    width: 300px;
+}
+
+.main {
+    flex: 1;
+    min-width: 0;
+    padding: 0 20px;
+}

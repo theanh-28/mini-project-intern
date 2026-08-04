@@ -1,0 +1,40 @@
+.avatar {
+    object-fit: cover;
+    user-select: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+}
+
+.circle {
+    border-radius: 50%;
+}
+
+.sm {
+    height: 32px;
+    width: 32px;
+    font-size: 12px;
+    border-width: 2px
+}
+
+.md {
+    height: 40px;
+    width: 40px;
+    font-size: 16px;
+    border-width: 3px;
+}
+
+.lg {
+    height: 48px;
+    width: 48px;
+    font-size: 20px;
+    border-width: 4px;
+}
+
+.placeholder {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+}

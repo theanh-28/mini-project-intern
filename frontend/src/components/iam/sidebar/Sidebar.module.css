@@ -1,0 +1,51 @@
+.card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-sidebar);
+    color: #d6d5d5;
+    padding: 20px 0;
+    gap: 20px;
+}
+
+.userInfo {
+    display: flex;
+    padding: 0 20px;
+    align-items: center;
+    gap: 10px;
+}
+
+.userName {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.sectionTitle {
+    font-size: 15px;
+    color: var(--color-text-muted);
+    padding: 10px 20px;
+    background-color: var(--sidebar-darker);
+}
+
+.menuItem {
+    padding: 10px 20px;
+}
+
+.menuLink {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #d6d5d5;
+}
+
+.menuItem:hover {
+    background-color: var(--sidebar-darker);
+}
+
+
+
+
+
+

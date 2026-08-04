@@ -1,0 +1,24 @@
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.pageInput {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+/* Ẩn mũi tên tăng/giảm trên Chrome, Safari, Edge, Opera */
+.pageInput::-webkit-outer-spin-button,
+.pageInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+/* Ẩn mũi tên tăng/giảm trên Firefox */
+.pageInput[type=number] {
+    -moz-appearance: textfield;
+}

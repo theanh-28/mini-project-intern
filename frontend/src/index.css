@@ -13,6 +13,9 @@
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
+
+  --color-sidebar: #263950;
+  --sidebar-darker:#0e141b;
 }
 
 html, body {

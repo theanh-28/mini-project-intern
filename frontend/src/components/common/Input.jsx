@@ -4,6 +4,7 @@ import styles from './Input.module.css';
 export default function Input({
   label,
   id,
+  name,
   type = 'text',
   value,
   onChange,
@@ -12,14 +13,16 @@ export default function Input({
   required = false,
   children,
   className = '',
+  containerClassName = '',
   ...props
 }) {
   return (
-    <div className={styles.inputGroup}>
+    <div className={clsx(styles.inputGroup, containerClassName)}>
       {label && <label htmlFor={id}>{label}</label>}
       <div className={styles.inputWrapper}>
         <input
           id={id}
+          name={name}
           type={type}
           value={value}
           onChange={onChange}

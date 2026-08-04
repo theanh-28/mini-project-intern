@@ -1,0 +1,55 @@
+.card {
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-primary);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    flex-shrink: 1;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.menu {
+    height: 28px;
+    width: 28px;
+    cursor: pointer;
+    stroke-width: 3px;
+}
+
+h1 {
+    font-size: 36px;
+    font-weight: 900;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bell {
+    height: 24px;
+    width: 24px;
+    stroke-width: 3px;
+}
+
+.avatar {
+    height: 24px;
+    width: 24px;
+    stroke-width: 3px;
+    border: 3px solid;
+    border-radius: 50%;
+    margin-left: 20px;
+}
+
+.userName {
+    font-size: 20px;
+    font-weight: 600;
+}

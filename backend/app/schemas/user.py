@@ -8,6 +8,7 @@ class UserResponse(BaseModel):
     user_id: int
     name: str
     email: EmailStr
+    is_admin: bool
     is_active: bool
     created_at: datetime
     last_login: datetime | None = None

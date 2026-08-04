@@ -1,23 +1,21 @@
 import { Link } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
 
-import { useLogin } from '../../hooks/useLogin';
-import { PATHS } from '../../constants/routes';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
+import { useLogin } from '@/hooks/useLogin';
+import { PATHS } from '@/constants/routes';
+import Input from '@/components/common/Input';
+import Button from '@/components/common/Button';
 import styles from './LoginPage.module.css';
 
 const LoginPage = () => {
     const {
-        email,
-        setEmail,
-        password,
-        setPassword,
+        values,
         errorMsg,
+        handleChange,
         showPassword,
         toggleShowPassword,
-        loading,
-        handleSubmit,
+        onSubmit,
+        isSubmitting,
     } = useLogin();
 
     return (
@@ -26,15 +24,16 @@ const LoginPage = () => {
                 <h2>Đăng nhập</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className={styles.form} noValidate>
+            <form onSubmit={onSubmit} className={styles.form} noValidate>
                 <Input
                     label="Email"
                     type="email"
                     id="email"
+                    name="email"
                     placeholder="abc@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
+                    value={values.email}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
                     required
                 />
 
@@ -42,10 +41,11 @@ const LoginPage = () => {
                     label="Password"
                     type={showPassword ? 'text' : 'password'}
                     id="password"
+                    name="password"
                     placeholder="*********"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
+                    value={values.password}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
                     required
                     style={{ paddingRight: '2.5rem' }}
                 >
@@ -69,7 +69,7 @@ const LoginPage = () => {
                     <Link to={PATHS.FORGOT_PASSWORD}>Quên mật khẩu</Link>
                 </div>
 
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={isSubmitting}>
                     Đăng Nhập
                 </Button>
             </form>

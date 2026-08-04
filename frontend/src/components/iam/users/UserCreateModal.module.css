@@ -1,0 +1,112 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.card {
+  position: fixed;
+  top: 5vh;
+  left: 30vw;
+  width: 40vw;
+  min-width: 400px;
+  background-color: #fff;
+  border-radius: 3px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 20px;
+  border-bottom: 1px solid #e3e2e2;
+  background-color: #f5f5f5;
+  color: var(--text-color);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 10px;
+}
+
+.inputContainer {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 1rem;
+}
+
+.inputContainer label {
+  width: 140px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.btns {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+    padding-top: 20px;
+  border-top: 1px solid #e3e2e2;
+  gap: 10px;
+}
+
+.btn {
+  width: auto;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.createBtn {
+  background-color: #00cc00;
+  color: #fff;
+}
+
+.createBtn:hover:not(:disabled) {
+  background-color: var(--color-success);
+  transform: none;
+}
+
+.resetBtn {
+  background-color: #ffcc00;
+  color: #fff;
+}
+
+.resetBtn:hover:not(:disabled) {
+  background-color: var(--color-warning);
+  transform: none;
+}
+
+.closeBtn {
+  background-color: #ff3300;
+  color: #fff;
+}
+
+.closeBtn:hover:not(:disabled) {
+  background-color: var(--color-error);
+  transform: none;
+}
+
+.toggleBtn {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { PATHS } from '../constants/routes';
+import { useAuth } from '@/context/AuthContext';
+import { PATHS } from '@/constants/routes';
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
     const { user, loading } = useAuth();
