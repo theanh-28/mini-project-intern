@@ -116,3 +116,39 @@ def update_user(user_id: int):
     logger.info(f"User updated: id={updated_user.user_id}, name={updated_user.name}, email={updated_user.email}, is_active={updated_user.is_active}")
     return jsonify(user_response.model_dump(mode='json')), 200    
 
+@admin_bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
+@require_admin
+@invalidate_cache(key='users:list:*')
+def delete_user(user_id: int):
+    """
+    Endpoint để xóa mềm tài khoản
+    """
+    payload = g.get("current_user")
+    actor_id = int(payload.get("sub"))
+
+    user_service = get_user_service()
+
+    user_service.delete_user(actor_id=actor_id, user_id=user_id)
+
+    logger.info(f"User delete: user_id={user_id}, actor_id={actor_id}")
+
+    return "", 204
+
+@admin_bp.route('/admin/users/<int:user_id>/restore', methods=['POST'])
+@require_admin
+@invalidate_cache(key='users:list:*')
+def restore_user(user_id: int):
+    """
+    Endpoint để khôi phục tài khoản
+    """
+    payload = g.get("current_user")
+    actor_id = int(payload.get("sub"))
+
+    user_service = get_user_service()
+
+    user_service.restore_user(actor_id=actor_id, user_id=user_id)
+
+    logger.info(f"User restore: user_id={user_id}, actor_id={actor_id}")
+
+    return "", 204
+

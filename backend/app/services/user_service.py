@@ -3,7 +3,7 @@ import secrets
 
 from app.core.security import verify_password, hash_password
 from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError, InvalidTokenError
-from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, PrivilegeViolationError
+from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, SelfRestoreError, PrivilegeViolationError
 from app.core.exceptions import DuplicateEmailError, DuplicateNameError
 from app.core.exceptions import UserNotFoundError
 from app.core.config import settings
@@ -177,7 +177,62 @@ class UserService:
                 self.redis_service.revoke_user_sessions(user_id=user_id, ttl=jwt_ttl_seconds)
 
         return updated_user
-    
+
+    def delete_user(self, actor_id: int, user_id: int):
+        """
+        Kiểm tra và xóa mềm tài khoản (is_active = False)
+        """
+
+        if actor_id == user_id:
+            # Không thể tự xóa tài khoản của mình
+            raise SelfDisableError()
+
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            # Kiểm tra user có tồn tại không
+            raise UserNotFoundError("User không tồn tại")
+
+        if user.is_admin: 
+            # Không có quyền xóa tài khoản admin khác
+            raise PrivilegeViolationError()
+
+        # Nếu user đã bị xóa mềm từ trước thì không làm gì cả
+        if not user.is_active:
+            return
+
+        # Xóa mềm 
+        self.user_repository.soft_delete(user=user)
+
+        # Khóa session/tài khoản trong Redis
+        if self.redis_service:
+            from app.core.config import settings
+            jwt_ttl_seconds = settings.access_token_expire_minutes * 60
+            self.redis_service.lock_account(user_id=user_id, ttl=jwt_ttl_seconds)
+
+    def restore_user(self, actor_id: int, user_id: int):
+        """
+        Kiểm tra và khôi phục tài khoản (is_active = True)
+        """
+        if actor_id == user_id:
+            # Không thể tự khôi phục tài khoản của mình
+            raise SelfRestoreError()
+
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            # Kiểm tra user có tồn tại không
+            raise UserNotFoundError("User không tồn tại")
+
+        if user.is_admin: 
+            # Không có quyền khôi phục tài khoản admin khác
+            raise PrivilegeViolationError()
+
+        # Nếu user đã ở trạng thái hoạt động (active) sẵn thì không làm gì cả
+        if user.is_active:
+            return
+
+        # Khôi phục tài khoản
+        self.user_repository.restore(user=user)
+
 def get_user_service() -> UserService:
     from app.repositories.user_repository import get_user_repository
     from app.services.redis_service import redis_service
