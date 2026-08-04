@@ -40,6 +40,13 @@ class UserRepository(BaseRepository):
         self.db.refresh(user)
         return user
 
+    def soft_delete(self, user: User) -> None:
+        user.is_active = False
+        self.db.commit()
+
+    def restore(self, user: User) -> None:
+        user.is_active = True
+        self.db.commit()
 
 def get_user_repository() -> UserRepository:
     from app.db.session import get_db
