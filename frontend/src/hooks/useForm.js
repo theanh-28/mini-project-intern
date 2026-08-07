@@ -3,26 +3,27 @@ import { useState } from 'react';
 export const useForm = (initialState = {}, validateFn) => {
     const [values, setValues] = useState(initialState);
     const [errorMsg, setErrorMsg] = useState('');
+    const [msgSuccess, setMsgSuccess] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Xử lý thay đổi giá trị input
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setValues((prev) => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
 
-        // Xóa lỗi khi người dùng nhập lại 
-        if (errorMsg) {
-            setErrorMsg('');
-        }
+        // Xóa thông báo lỗi và thông báo thành công cũ khi người dùng nhập lại 
+        if (errorMsg) setErrorMsg('');
+        if (msgSuccess) setMsgSuccess('');
     };
 
     // Hàm xử lý submit
     const handleSubmit = (onSubmitCallback) => async (e) => {
         e.preventDefault();
         setErrorMsg('');
+        setMsgSuccess('');
 
         // Kiểm tra validation client-side
         if (validateFn) {
@@ -39,8 +40,11 @@ export const useForm = (initialState = {}, validateFn) => {
             await onSubmitCallback(values);
         } catch (error) {
             // Xử lý lỗi từ API (Server-side errors)
-            const serverError = error.response?.data?.error || error.message || 'Có lỗi xảy ra';
-            setErrorMsg(serverError);
+            const errData = error.response?.data?.error || error.response?.data?.detail || error.message;
+            const serverError = typeof errData === 'object' 
+                ? (Array.isArray(errData) ? errData[0]?.msg : errData.msg || errData.message || JSON.stringify(errData)) 
+                : errData;
+            setErrorMsg(serverError || 'Có lỗi xảy ra');
         } finally {
             setIsSubmitting(false);
         }
@@ -51,6 +55,8 @@ export const useForm = (initialState = {}, validateFn) => {
         setValues,
         errorMsg,
         setErrorMsg,
+        msgSuccess,
+        setMsgSuccess,
         isSubmitting,
         setIsSubmitting,
         handleChange,

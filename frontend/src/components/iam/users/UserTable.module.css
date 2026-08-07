@@ -10,6 +10,7 @@ thead tr {
     color: var(--color-text);
     position: sticky;
     top: 0;
+    z-index: 0;
     background-color: var(--color-bg-alt);
     white-space: nowrap;
 }
@@ -21,7 +22,15 @@ thead th {
 }
 
 tbody tr:nth-child(odd) {
-    background-color: #eeecec;
+    background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #fff;
+}
+
+tbody tr:hover {
+    background-color: #ececec;
 }
 
 tbody td {
@@ -31,7 +40,7 @@ tbody td {
     text-align: left;
 }
 
-.active {
+.status {
     font-weight: 600;
     font-size: 0.8rem;
 }
@@ -81,16 +90,45 @@ tbody td {
     gap: 5px;
 }
 
-.delete {
-    width: 70px;
-    padding: 1px 0px;
-    border-radius: 10px;
-    background-color: rgb(244, 86, 86);
+
+.action .delete {
+    width: auto;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background-color: var(--color-error);
+    border: 1px solid #FECACA;
+    color: #fff;
+    font-size: 0.8rem;
     font-weight: 400;
-    font-size: 1rem;
 }
 
-.delete:hover:not(:disabled) {
+.action .delete:hover:not(:disabled) {
     background-color: var(--color-error);
-    transform: none;
+    transform: scale(1.1);
+}
+
+.action .restore {
+    width: auto;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background-color: var(--color-success);
+    border: 1px solid #A7F3D0;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.action .restore:hover:not(:disabled) {
+    background-color: var(--color-success);
+    transform: scale(1.1);
+}
+
+.userName a {
+    text-decoration: none;
+    color: var(--color-primary, #25a2eb);
+}
+
+.userName a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
 }

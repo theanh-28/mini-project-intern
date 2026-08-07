@@ -17,24 +17,24 @@
     height: 32px;
     width: 32px;
     font-size: 12px;
-    border-width: 2px
+    border-width: 2px;
 }
 
 .md {
-    height: 40px;
-    width: 40px;
-    font-size: 16px;
-    border-width: 3px;
-}
-
-.lg {
-    height: 48px;
-    width: 48px;
-    font-size: 20px;
+    height: 64px;
+    width: 64px;
+    font-size: 24px;
     border-width: 4px;
 }
 
+.lg {
+    height: 96px;
+    width: 96px;
+    font-size: 36px;
+    border-width: 6px;
+}
+
 .placeholder {
-    background-color: var(--color-bg);
+    background-color: var(--color-bg-alt);
     color: var(--color-text);
 }

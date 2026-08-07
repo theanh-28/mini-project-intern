@@ -1,0 +1,101 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.card {
+  position: absolute;
+  left: 35vw;
+  top: 20vh;
+  width: 30vw;
+  min-width: 300px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e3e2e2;
+  background-color: #f8f9fa;
+  color: var(--text-color, #333);
+}
+
+.body {
+  padding: 20px;
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.userInfo {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background-color: #f1f3f5;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.errorMsg {
+  margin-top: 12px;
+  color: #d9534f;
+  font-size: 1rem;
+  padding: 5px 12px;
+  border-radius: 4px;
+}
+
+.btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #e3e2e2;
+  gap: 10px;
+  background-color: #fafafa;
+}
+
+.btn {
+  width: auto;
+  font-size: 0.95rem;
+  padding: 8px 16px;
+}
+
+.cancelBtn {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background-color: #d5d5d5;
+  box-shadow: none;
+}
+
+.deleteBtn {
+  background-color: #ff3300;
+  color: #fff;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background-color: var(--color-error, #dc3545);
+  box-shadow: none;
+}
+
+.restoreBtn {
+  background-color: #00cc00;
+  color: #fff;
+}
+
+.restoreBtn:hover:not(:disabled) {
+  background-color: var(--color-success, #28a745);
+  box-shadow: none;
+}

@@ -19,7 +19,11 @@ export const useUsersTable = () => {
             setTotalPages(data.total_pages || 1);
             setTotal(data.total || 0);
         } catch (err) {
-            setError(err);
+            const errData = err.response?.data?.error || err.response?.data?.detail || err.message;
+            const errMsg = typeof errData === 'object' 
+                ? (Array.isArray(errData) ? errData[0]?.msg : errData.msg || errData.message || JSON.stringify(errData)) 
+                : errData;
+            setError(errMsg || 'Có lỗi xảy ra, vui lòng thử lại');
         } finally {
             setLoading(false);
         }

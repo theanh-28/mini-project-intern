@@ -11,7 +11,7 @@ export default function Sidebar() {
     return (
         <section className={styles.card}>
             <div className={styles.userInfo}>
-                <Avatar name={user.name} size='lg'></Avatar>
+                <Avatar name={user.name} size='md'></Avatar>
                 <span className={styles.userName}>
                     {user.name}
                 </span>

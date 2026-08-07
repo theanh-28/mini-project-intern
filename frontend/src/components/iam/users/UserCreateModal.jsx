@@ -1,25 +1,24 @@
-
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import styles from './UserCreateModal.module.css';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole, User, Mail } from 'lucide-react';
 
-export default function UserCreateModal({ 
-    open, 
-    setShowModal, 
-    onSubmit, 
-    onChange, 
-    errorMsg, 
-    msgSuccess, 
-    showPassword, 
+export default function UserCreateModal({
+    isOpen,
+    closeModal,
+    onSubmit,
+    values,
+    handleChange,
+    errorMsg,
+    msgSuccess,
+    isSubmitting,
+    showPassword,
     toggleShowPassword,
     showConfirmPassword,
     toggleShowConfirmPassword,
-    values, 
     resetForm,
-    isSubmitting
 }) {
-    if (!open) return null;
+    if (!isOpen) return null;
 
     return (
         <div className={styles.modalOverlay}>
@@ -36,7 +35,8 @@ export default function UserCreateModal({
                         value={values.name}
                         label="Username" 
                         placeholder="Enter username" 
-                        onChange={onChange}
+                        onChange={handleChange}
+                        leftIcon={<User strokeWidth='3' size={18} style={{pointerEvents:'none'}}/>}
                     />
                     <Input 
                         containerClassName={styles.inputContainer} 
@@ -45,7 +45,8 @@ export default function UserCreateModal({
                         name='email'
                         placeholder="Enter email" 
                         value={values.email} 
-                        onChange={onChange} 
+                        onChange={handleChange} 
+                        leftIcon={<Mail strokeWidth='3' size={18} style={{pointerEvents:'none'}}/>}
                     />
                     <Input 
                         containerClassName={styles.inputContainer} 
@@ -54,17 +55,18 @@ export default function UserCreateModal({
                         placeholder="Enter password" 
                         type={showPassword ? 'text' : 'password'} 
                         value={values.password} 
-                        onChange={onChange} 
-                    >
-                        <button
-                            className={styles.toggleBtn}
-                            type="button"
-                            onClick={toggleShowPassword}
-                            tabIndex={-1}
-                        >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                    </Input>
+                        onChange={handleChange} 
+                        leftIcon={<LockKeyhole strokeWidth='3' size={18} />}
+                        rightIcon={
+                            <button
+                                type="button"
+                                onClick={toggleShowPassword}
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        }
+                    />
                     <Input 
                         containerClassName={styles.inputContainer} 
                         label="Confirm Password" 
@@ -72,17 +74,18 @@ export default function UserCreateModal({
                         type={showConfirmPassword ? 'text' : 'password'} 
                         name='confirmPassword'
                         value={values.confirmPassword} 
-                        onChange={onChange} 
-                    >
-                        <button
-                            className={styles.toggleBtn}
-                            type="button"
-                            onClick={toggleShowConfirmPassword}
-                            tabIndex={-1}
-                        >
-                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                    </Input>
+                        onChange={handleChange}
+                        leftIcon={<LockKeyhole strokeWidth='3' size={18} />} 
+                        rightIcon={
+                            <button
+                                type="button"
+                                onClick={toggleShowConfirmPassword}
+                                tabIndex={-1}
+                            >
+                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        }
+                    />
 
                     {errorMsg && (
                         <div className={styles.errorMsg}>
@@ -97,14 +100,14 @@ export default function UserCreateModal({
                     )}
 
                     <div className={styles.btns}>
-                        <Button className={`${styles.btn} ${styles.createBtn}`} type='submit' isLoading={isSubmitting}>
-                            Create
+                        <Button className={`${styles.btn} ${styles.cancelBtn}`} type='button' onClick={closeModal}>
+                            Cancel
                         </Button>
                         <Button className={`${styles.btn} ${styles.resetBtn}`} type='button' onClick={resetForm}>
                             Reset Form
                         </Button>
-                        <Button className={`${styles.btn} ${styles.closeBtn}`} type='button' onClick={() => setShowModal(false)}>
-                            Close
+                        <Button className={`${styles.btn} ${styles.createBtn}`} type='submit' isLoading={isSubmitting}>
+                            Create
                         </Button>
                     </div>
                 </form>

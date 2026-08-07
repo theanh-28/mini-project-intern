@@ -23,7 +23,14 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser && !isTokenExpired(token)) {
-            setUser(JSON.parse(savedUser));
+            try {
+        setUser(JSON.parse(savedUser));
+            } catch (e) {
+                // Nếu localStorage có dữ liệu rác/lỗi => tự động dọn dẹp an toàn
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            }
         } else {
             // Token không có, hết hạn, hoặc sai format
             localStorage.removeItem('token');

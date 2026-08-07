@@ -47,17 +47,16 @@ const LoginPage = () => {
                     onChange={handleChange}
                     disabled={isSubmitting}
                     required
-                    style={{ paddingRight: '2.5rem' }}
-                >
-                    <button
-                        className={styles.toggleBtn}
-                        type="button"
-                        onClick={toggleShowPassword}
-                        tabIndex={-1}
-                    >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                </Input>
+                    rightIcon={
+                        <button
+                            type="button"
+                            onClick={toggleShowPassword}
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    }
+                />
 
                 {errorMsg && (
                     <div className={styles.errorMsg}>

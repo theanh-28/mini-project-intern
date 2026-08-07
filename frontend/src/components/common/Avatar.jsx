@@ -4,12 +4,19 @@ import styles from './Avatar.module.css';
 export default function Avatar({ src, name, size = 'md', shape = 'circle', className = ''}) {
     const [isError, setIsError] = useState(false);
 
-    // Lấy ký tự đầu của tên là chữ đại diện 
+    // Lấy ký tự đầu của tên làm chữ đại diện (loại bỏ dấu tiếng Việt)
     const getInitials = (fullName) => {
         if (!fullName) return '?';
-        const parts = fullName.trim().split(' ');
+        const cleanName = fullName
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'D')
+            .trim();
+
+        const parts = cleanName.split(/\s+/);
         if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-        return (parts[0].charAt(0) + parts[parts.length-1].charAt(0)).toUpperCase();
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
 
     // Tạo class

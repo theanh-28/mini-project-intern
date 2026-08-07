@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { adminService } from '@/services/adminService';
-
 import { useForm } from '@/hooks/useForm';
 
 const validateCreateUser = (values) => {
@@ -41,10 +40,9 @@ const validateCreateUser = (values) => {
 };
 
 export const useCreateUser = (onSuccess) => {
+    const [isOpen, setIsOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [msgSuccess, setMsgSuccess] = useState('');
 
     const form = useForm({
         name: '',
@@ -52,6 +50,23 @@ export const useCreateUser = (onSuccess) => {
         password: '',
         confirmPassword: '',
     }, validateCreateUser);
+
+
+    const resetForm = () => {
+        setShowPassword(false);
+        setShowConfirmPassword(false);
+        form.setMsgSuccess('');
+        form.setErrorMsg('');
+        form.setValues({ name: '', email: '', password: '', confirmPassword: '' });
+    };
+
+    const openModal = () => {
+        setIsOpen(true);
+    };
+    const closeModal = () => {
+        resetForm();
+        setIsOpen(false);
+    };
 
     const toggleShowPassword = () => {
         setShowPassword((prev) => !prev);
@@ -61,35 +76,28 @@ export const useCreateUser = (onSuccess) => {
         setShowConfirmPassword((prev) => !prev);
     };
 
-    const resetForm = () => {
-        setShowPassword(false);
-        setShowConfirmPassword(false);
-        setMsgSuccess('');
-        form.setErrorMsg('');
-        form.setValues({ name: '', email: '', password: '', confirmPassword: '' });
-    };
-
     const handleCreateUser = async (formValues) => {
-        setMsgSuccess('');
-        
         await adminService.createUser(formValues);
-        form.setValues({ name: '', email: '', password: '', confirmPassword: '' });
-        setMsgSuccess('Người dùng đã được tạo thành công!');
+        form.setMsgSuccess('Người dùng đã được tạo thành công!');
         if (onSuccess) {
             onSuccess();
         }
+        // Tự động đóng modal sau 1 giây hiển thị thông báo thành công
+        setTimeout(() => {
+            closeModal();
+        }, 1000);
     };
 
-    return { 
-        ...form, 
+    return {
+        ...form,
         onSubmit: form.handleSubmit(handleCreateUser),
-        showPassword, 
-        toggleShowPassword, 
-        showConfirmPassword, 
-        toggleShowConfirmPassword, 
-        showModal, 
-        setShowModal,
-        msgSuccess,
+        isOpen,
+        openModal,
+        closeModal,
+        showPassword,
+        toggleShowPassword,
+        showConfirmPassword,
+        toggleShowConfirmPassword,
         resetForm,
     };
 };

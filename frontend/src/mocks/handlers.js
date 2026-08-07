@@ -20,8 +20,8 @@ let users = Array.from({length: 200}, (_, i)=> {
     user_id: id,
     name: `User${id}`,
     email: `user${id}@example.com`,
-    is_active: i % 2 === 0 ? true : false,
-    is_admin: i % 3 === 0 ? true : false,
+    is_active: i % 7 === 0 ? false : true,
+    is_admin: i % 5 === 0 ? true : false,
     created_at: new Date(Date.now() - i * 86400000).toISOString(),
     last_login: i % 5 === 0 ? null : new Date(Date.now() - (i-1) * 86400000).toISOString()
   }
@@ -95,5 +95,67 @@ export const handlers = [
   }),
 
   // DELETE /admin/users/:user_id
-  
+  http.delete(`${API_URL}/admin/users/:id`, async ({ params }) => {
+    const { id } = params;
+    const user_id = Number(id);
+
+    const user = users.find((u) => u.user_id === user_id);
+
+    if (user) {
+      user.is_active = false
+      return HttpResponse.json('', { status: 204 });
+    }
+    return HttpResponse.json('User Not Found', { status: 404 });
+  }),
+
+  // POST /admin/users/:user_id/restore
+  http.post(`${API_URL}/admin/users/:id/restore`, async ({ params }) => {
+    const { id } = params;
+    const user_id = Number(id);
+
+    const user = users.find((u) => u.user_id === user_id);
+
+    if (user) {
+      user.is_active = true;
+      return HttpResponse.json('', { status: 204 });
+    }
+    return HttpResponse.json('User Not Found', { status: 404 });
+  }),
+
+  // GET /admin/users/:user_id
+  http.get(`${API_URL}/admin/users/:id`, async ({ params }) => {
+    const { id } = params;
+    const user_id = Number(id);
+
+    const user = users.find((u) => u.user_id === user_id);
+
+    if (user) {
+      return HttpResponse.json({
+        user: {...user}
+      },
+      { status: 200}
+    );
+    }
+    return HttpResponse.json('User Not Found', { status: 404 });
+    
+  }),
+
+  // PUT /admin/users/:user_id
+  http.put(`${API_URL}/admin/users/:id`, async ({ request, params }) =>{
+    const body = await request.json();
+    const { id } = params;
+    const user_id = Number(id);
+
+    const user = users.find((u) => u.user_id === user_id);
+
+    if (user) {
+      for (const [key, value] of Object.entries(body)) {
+        user[key] = value;
+      }
+      return HttpResponse.json({...user}, { status: 200 });
+    }
+
+    return HttpResponse.json('User Not Found', { status: 404});
+  })
+
 ]

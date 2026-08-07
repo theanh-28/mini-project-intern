@@ -45,17 +45,18 @@
 }
 
 .inputContainer label {
-  width: 140px;
+  width: 200px;
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-color);
+  text-align: left;
 }
 
 .btns {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-    padding-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid #e3e2e2;
   gap: 10px;
 }
@@ -73,6 +74,7 @@
 
 .createBtn:hover:not(:disabled) {
   background-color: var(--color-success);
+  box-shadow: none;
   transform: none;
 }
 
@@ -83,30 +85,18 @@
 
 .resetBtn:hover:not(:disabled) {
   background-color: var(--color-warning);
+  box-shadow: none;
   transform: none;
 }
 
-.closeBtn {
-  background-color: #ff3300;
-  color: #fff;
+.cancelBtn {
+  background-color: #e0e0e0;
+  color: #333;
 }
 
-.closeBtn:hover:not(:disabled) {
-  background-color: var(--color-error);
+.cancelBtn:hover:not(:disabled) {
+  background-color: #d5d5d5;
+  box-shadow: none;
   transform: none;
 }
-
-.toggleBtn {
-  position: absolute;
-  top: 50%;
-  right: 0.75rem;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  transition: color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+

@@ -1,7 +1,7 @@
 .btn {
   width: 100%;
   border-radius: 12px;
-  padding: 2svh;
+  padding: 10px;
   border: none;
   background-color: var(--color-primary);
   color: #ffffff;

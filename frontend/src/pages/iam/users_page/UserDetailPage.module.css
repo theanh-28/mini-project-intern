@@ -1,0 +1,51 @@
+.page {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+.page .header {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+}
+
+.header .title {
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+.header .navigate {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    gap: 1px;
+
+}
+
+.header .linkUsers {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: var(--color-text);
+}
+
+.header .linkUsers:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.page .userProfile {
+    width: 350px;
+    height: 80vh;
+    background-color: #fff;
+    border-top: 5px solid var(--color-primary);
+    border-radius: 5px;
+}

@@ -7,6 +7,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 
 import IAMLayout from '@/layouts/iam_layout/IAMLayout';
 import UsersPage from '@/pages/iam/users_page/UsersPage';
+import UserDetailPage from '@/pages/iam/users_page/UserDetailPage';
 
 import { PATHS } from '@/constants/routes';
 
@@ -25,6 +26,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute requireAdmin={true} />}>
         <Route element={<IAMLayout />}>
           <Route path={PATHS.ADMIN_USERS} element={<UsersPage />} />
+          <Route path={`${PATHS.ADMIN_USERS}/:userId`} element={<UserDetailPage />}/>
         </Route>
       </Route>
 
