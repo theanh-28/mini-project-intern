@@ -3,10 +3,10 @@ import { http, HttpResponse } from 'msw';
 // Tạo một payload giả 
 const payload = {
   "sub": 0,
-  "is_admin": true,
+  "roles": ["admin"],
   "exp": 9257888000,
 }
-const mockPayload = btoa(JSON.stringify(payload)); 
+const mockPayload = btoa(JSON.stringify(payload));
 const mockHeader = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
 const mockSignature = "mock_signature";
 
@@ -14,16 +14,16 @@ const mockSignature = "mock_signature";
 const devToken = `${mockHeader}.${mockPayload}.${mockSignature}`;
 
 // tạo dữ liệu user  mẫu ban đầu
-let users = Array.from({length: 200}, (_, i)=> {
+let users = Array.from({ length: 200 }, (_, i) => {
   const id = i + 1;
   return {
     user_id: id,
     name: `User${id}`,
     email: `user${id}@example.com`,
     is_active: i % 7 === 0 ? false : true,
-    is_admin: i % 5 === 0 ? true : false,
+    roles: i % 5 === 0 ? ['admin'] : ['user'],
     created_at: new Date(Date.now() - i * 86400000).toISOString(),
-    last_login: i % 5 === 0 ? null : new Date(Date.now() - (i-1) * 86400000).toISOString()
+    last_login: i % 5 === 0 ? null : new Date(Date.now() - (i - 1) * 86400000).toISOString()
   }
 })
 
@@ -38,43 +38,90 @@ export const handlers = [
       body.email === 'admin@example.com' &&
       body.password === '123456'
     ) {
-      return HttpResponse.json({ 
-        access_token: devToken, 
+      return HttpResponse.json({
+        access_token: devToken,
         user: {
           user_id: 0,
           email: 'admin@example.com',
           name: 'Admin Mock',
-          is_admin: true
+          roles: ['admin'],
+          permissions: ['users:read', 'users:create', 'users:update', 'users:delete']
         }
       });
     }
     return new HttpResponse(null, { status: 401 });
   }),
-  
-  // GET /admin/users
-  http.get(`${API_URL}/admin/users`, async ({request}) => {
-    // Lấy URL và parse query
+
+  // POST /auth/logout
+  http.post(`${API_URL}/auth/logout`, async () => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+  // GET /admin/users (Lấy danh sách user kèm phân trang + tìm kiếm + lọc)
+  http.get(`${API_URL}/admin/users`, async ({ request }) => {
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || 1, 10);
-    const per_page = parseInt(url.searchParams.get('per_page') || 20, 10);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const perPage = parseInt(url.searchParams.get('per_page') || '20', 10);
+    const search = url.searchParams.get('search')?.toLowerCase() || '';
+    const status = url.searchParams.get('status') || '';
+    const isActiveParam = url.searchParams.get('is_active');
+    const role = url.searchParams.get('role') || '';
+    const startDate = url.searchParams.get('start_date') || url.searchParams.get('created_at_from') || '';
+    const endDate = url.searchParams.get('end_date') || url.searchParams.get('created_at_to') || '';
 
-    const totalUsers = users.length;
-    const totalPages = Math.ceil(totalUsers / per_page);
+    let filteredUsers = [...users];
 
-    // Tạo danh sách user 
-    const startIdx = (page - 1) * per_page;
-    const paginatedUsers = users.slice(startIdx, startIdx + per_page);
+    // Tìm kiếm theo name hoặc email
+    if (search) {
+      filteredUsers = filteredUsers.filter(
+        (u) =>
+          u.name.toLowerCase().includes(search) ||
+          u.email.toLowerCase().includes(search)
+      );
+    }
+
+    // Lọc theo Status (active / inactive / is_active)
+    if (isActiveParam !== null && isActiveParam !== undefined) {
+      const activeBool = isActiveParam === 'true' || isActiveParam === true;
+      filteredUsers = filteredUsers.filter((u) => u.is_active === activeBool);
+    } else if (status === 'active') {
+      filteredUsers = filteredUsers.filter((u) => u.is_active === true);
+    } else if (status === 'inactive') {
+      filteredUsers = filteredUsers.filter((u) => u.is_active === false);
+    }
+
+    // Lọc theo Role (admin / user)
+    if (role) {
+      filteredUsers = filteredUsers.filter((u) => u.roles?.includes(role));
+    }
+
+    // Lọc theo khoảng ngày (Created At)
+    if (startDate) {
+      const start = new Date(startDate);
+      filteredUsers = filteredUsers.filter((u) => new Date(u.created_at) >= start);
+    }
+    if (endDate) {
+      const end = new Date(`${endDate}T23:59:59`);
+      filteredUsers = filteredUsers.filter((u) => new Date(u.created_at) <= end);
+    }
+
+    // Tính toán phân trang
+    const total = filteredUsers.length;
+    const totalPages = Math.ceil(total / perPage);
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
     return HttpResponse.json({
       users: paginatedUsers,
-      total: totalUsers,
-      page: page,
-      per_page: per_page,
+      total,
+      page,
+      per_page: perPage,
       total_pages: totalPages,
-    })
+    });
   }),
 
-  // POST /admin/users
+  // POST /admin/users (Tạo user mới)
   http.post(`${API_URL}/admin/users`, async ({ request }) => {
     const body = await request.json();
     const nextId = users.length + 1;
@@ -83,14 +130,14 @@ export const handlers = [
       name: body.name,
       email: body.email,
       is_active: true,
-      is_admin: false,
+      roles: ['user'],
       created_at: new Date().toISOString(),
       last_login: null,
     };
-    
+
     // Đẩy user mới vào đầu users array
     users.unshift(newUser);
-    
+
     return HttpResponse.json(newUser, { status: 201 });
   }),
 
@@ -130,18 +177,14 @@ export const handlers = [
     const user = users.find((u) => u.user_id === user_id);
 
     if (user) {
-      return HttpResponse.json({
-        user: {...user}
-      },
-      { status: 200}
-    );
+      return HttpResponse.json({ ...user }, { status: 200 });
     }
     return HttpResponse.json('User Not Found', { status: 404 });
-    
+
   }),
 
   // PUT /admin/users/:user_id
-  http.put(`${API_URL}/admin/users/:id`, async ({ request, params }) =>{
+  http.put(`${API_URL}/admin/users/:id`, async ({ request, params }) => {
     const body = await request.json();
     const { id } = params;
     const user_id = Number(id);
@@ -152,10 +195,10 @@ export const handlers = [
       for (const [key, value] of Object.entries(body)) {
         user[key] = value;
       }
-      return HttpResponse.json({...user}, { status: 200 });
+      return HttpResponse.json({ ...user }, { status: 200 });
     }
 
-    return HttpResponse.json('User Not Found', { status: 404});
+    return HttpResponse.json('User Not Found', { status: 404 });
   })
 
 ]

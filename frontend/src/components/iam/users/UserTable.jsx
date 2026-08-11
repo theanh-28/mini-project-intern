@@ -65,7 +65,7 @@ export default function UserTable({ users, loading, error, page}) {
                                 )}
                             </td>
                             <td className={styles.role}>
-                                {user.is_admin ? (
+                                {user.roles?.includes('admin') ? (
                                     <div className={styles.roleAdmin}>
                                         <Shield strokeWidth={3} size={15} color='#6262f4' /> Admin
                                     </div>

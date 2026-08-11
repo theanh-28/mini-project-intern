@@ -16,11 +16,32 @@
     gap: 24px;
 }
 
-.menu {
-    height: 28px;
-    width: 28px;
+.menuBtn {
     cursor: pointer;
-    stroke-width: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.menuBtn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.menuIcon {
+    width: 30px;
+    height: 30px;
+    color: #ffffff;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.menuBtn:hover .menuIcon {
+    color: #e0e0e0;
+    transform: scale(1.2);
 }
 
 h1 {
@@ -38,18 +59,4 @@ h1 {
     height: 24px;
     width: 24px;
     stroke-width: 3px;
-}
-
-.avatar {
-    height: 24px;
-    width: 24px;
-    stroke-width: 3px;
-    border: 3px solid;
-    border-radius: 50%;
-    margin-left: 20px;
-}
-
-.userName {
-    font-size: 20px;
-    font-weight: 600;
 }

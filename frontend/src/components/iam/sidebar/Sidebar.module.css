@@ -7,41 +7,138 @@
     color: #d6d5d5;
     padding: 20px 0;
     gap: 20px;
+    overflow: hidden;
 }
 
 .userInfo {
     display: flex;
-    padding: 0 20px;
     align-items: center;
-    gap: 10px;
+    padding: 0 20px;
+    gap: 12px;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .userName {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s;
+}
+
+.menuSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .sectionTitle {
-    font-size: 15px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     color: var(--color-text-muted);
     padding: 10px 20px;
     background-color: var(--sidebar-darker);
+    white-space: nowrap;
+    overflow: hidden;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sectionTitleText {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s;
+}
+
+.menuList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .menuItem {
     padding: 10px 20px;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+}
+
+.menuItem:hover {
+    background-color: var(--sidebar-darker);
 }
 
 .menuLink {
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     color: #d6d5d5;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.menuItem:hover {
-    background-color: var(--sidebar-darker);
+.menuIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.menuLabel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s;
+}
+
+.card.collapsed .userInfo {
+    padding: 0 10px;
+    gap: 0;
+}
+
+.card.collapsed .userName {
+    opacity: 0;
+    width: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease 0s;
+}
+
+.card.collapsed .sectionTitle {
+    padding: 10px 0;
+}
+
+.card.collapsed .sectionTitleText {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease 0s;
+}
+
+.card.collapsed .menuItem {
+    padding: 10px 30px;
+}
+
+.card.collapsed .menuLink {
+    gap: 0;
+}
+
+.card.collapsed .menuLabel {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+    transition: opacity 0.1s ease 0s;
 }
 
 

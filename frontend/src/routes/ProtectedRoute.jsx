@@ -12,7 +12,9 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
         return <Navigate to={PATHS.LOGIN} replace />;
     }
 
-    if (requireAdmin && !user.is_admin) {
+    const isAdmin = user.roles?.includes('admin');
+
+    if (requireAdmin && !isAdmin) {
         // Nếu trang yêu cầu admin nhưng user thường thì trả về trang cấm truy cập /403
         return <Navigate to={PATHS.FORBIDDEN} replace />;
     }

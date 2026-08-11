@@ -1,0 +1,256 @@
+.container {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.triggerBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--color-text, #0f172a);
+    background-color: #fff;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.triggerBtn:hover {
+    border-color: var(--color-primary, #25a2eb);
+    background-color: var(--color-bg, #f8fafc);
+}
+
+.triggerBtn.active {
+    border-color: var(--color-primary, #25a2eb);
+    box-shadow: 0 0 0 3px rgba(37, 162, 235, 0.15);
+}
+
+.popover {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    width: 620px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: popIn 0.2s ease-in-out;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.body {
+    display: flex;
+    padding: 16px;
+    gap: 16px;
+}
+
+.presetColumn {
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid var(--color-border, #e2e8f0);
+    padding-right: 12px;
+}
+
+.presetBtn {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text, #334155);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+.presetBtn:hover {
+    background-color: var(--color-bg, #f1f5f9);
+}
+
+.presetBtn.activePreset {
+    background-color: #e0f2fe;
+    color: #0284c7;
+    font-weight: 600;
+}
+
+.calendarColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.navHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.navBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    background-color: #ffffff;
+    color: var(--color-text, #334155);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.navBtn:hover {
+    background-color: var(--color-bg, #f1f5f9);
+    color: var(--color-primary, #25a2eb);
+}
+
+.monthTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text, #0f172a);
+}
+
+.calendarsWrapper {
+    display: flex;
+    gap: 20px;
+}
+
+.singleCalendar {
+    flex: 1;
+}
+
+.weekGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.weekDay {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #64748b);
+}
+
+.daysGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.dayBtn {
+    height: 30px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--color-text, #1e293b);
+    background: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dayBtn:hover:not(:disabled) {
+    background-color: var(--color-bg, #e2e8f0);
+}
+
+.otherMonth {
+    color: #cbd5e1;
+    cursor: default;
+}
+
+.startDate,
+.endDate {
+    background-color: var(--color-primary, #25a2eb) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    border-radius: 6px;
+}
+
+.inRange {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-radius: 0;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border, #e2e8f0);
+    background-color: var(--color-bg-alt, #f8fafc);
+}
+
+.selectedSummary {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted, #64748b);
+}
+
+.footerBtns {
+    display: flex;
+    gap: 8px;
+}
+
+.cancelBtn {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text, #334155);
+    background-color: #ffffff;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cancelBtn:hover {
+    background-color: var(--color-bg, #f1f5f9);
+}
+
+.applyBtn {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: var(--color-primary, #25a2eb);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.applyBtn:hover {
+    background-color: var(--color-primary-hover, #1d4ed8);
+}

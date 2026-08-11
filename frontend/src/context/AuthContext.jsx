@@ -24,9 +24,11 @@ export const AuthProvider = ({ children }) => {
 
         if (token && savedUser && !isTokenExpired(token)) {
             try {
-        setUser(JSON.parse(savedUser));
-            } catch (e) {
-                // Nếu localStorage có dữ liệu rác/lỗi => tự động dọn dẹp an toàn
+                const parsed = JSON.parse(savedUser);
+                const roles = parsed.roles || [];
+                setUser({ ...parsed, roles });
+            } catch {
+                // Nếu localStorage có dữ liệu rác/lỗi => tự động dọn dẹp
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 setUser(null);
@@ -35,6 +37,7 @@ export const AuthProvider = ({ children }) => {
             // Token không có, hết hạn, hoặc sai format
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setUser(null);
         }
         setLoading(false);
     }, []);
@@ -46,11 +49,15 @@ export const AuthProvider = ({ children }) => {
             // Lưu token và thông tin user vào localStorage
             localStorage.setItem('token', data.access_token);
 
+            const roles = data.user.roles || [];
+            const permissions = data.user.permissions || [];
+
             const loggedUser = {
                 user_id: data.user.user_id,
                 email: data.user.email || email,
                 name: data.user.name,
-                is_admin: data.user.is_admin,
+                roles: roles,
+                permissions: permissions,
             };
             localStorage.setItem('user', JSON.stringify(loggedUser));
             setUser(loggedUser);

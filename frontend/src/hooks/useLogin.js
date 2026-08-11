@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { PATHS } from '@/constants/routes';
@@ -27,8 +27,18 @@ const validateLogin = (values) => {
 
 export const useLogin = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const navigate = useNavigate();
+
+    // Nếu người dùng đã đăng nhập từ trước và là admin, tự động chuyển hướng sang trang admin/users
+    useEffect(() => {
+        if (user) {
+            const isAdmin = user.roles?.includes('admin');
+            if (isAdmin) {
+                navigate(PATHS.ADMIN_USERS, { replace: true });
+            }
+        }
+    }, [user, navigate]);
 
     // Sử dụng useForm 
     const form = useForm(
@@ -40,12 +50,12 @@ export const useLogin = () => {
         setShowPassword((prev) => !prev);
     };
 
-    const handleLogin = async(formValues) => {
+    const handleLogin = async (formValues) => {
         await login(
             formValues.email,
             formValues.password,
         );
-        navigate(PATHS.ADMIN_USERS);
+        navigate(PATHS.ADMIN_USERS, { replace: true });
     };
 
     return {

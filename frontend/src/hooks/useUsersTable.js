@@ -9,12 +9,19 @@ export const useUsersTable = () => {
     const [error, setError] = useState(null);
     const [total, setTotal] = useState(0);
 
+    const [filters, setFilters] = useState({
+        search: '',
+        status: '',
+        role: '',
+        startDate: '',
+        endDate: '',
+    });
+
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const currentPage = Number(page) || 1;
-            const data = await adminService.getUsers({ page: currentPage, per_page: 20 });
+            const data = await adminService.getUsers({ page, per_page: 20, ...filters });
             setUsers(data.users || []);
             setTotalPages(data.total_pages || 1);
             setTotal(data.total || 0);
@@ -27,42 +34,28 @@ export const useUsersTable = () => {
         } finally {
             setLoading(false);
         }
-    }, [page]);
+    }, [page, filters]);
 
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
 
-    // Hàm xử lý nhập số trang
-    const handlePageInputChange = (value) => {
-        // Nếu xóa rỗng ô input thì cho phép tạm thời rỗng
-        if (value === '') {
-            setPage('');
-            return;
-        }
-        let num = parseInt(value, 10);
-        if (isNaN(num)) return;
-        // Ép giá trị nằm trong khoảng: 1 <= num <= totalPages
-        if (num < 1) num = 1;
-        if (num > totalPages) num = totalPages;
-        setPage(num);
-    };
-    // Khi người dùng click ra ngoài mà ô input đang rỗng -> trả về trang 1
-    const handleBlur = () => {
-        if (!page) {
-            setPage(1);
-        }
+    // Khi bộ lọc thay đổi, reset về trang 1 và lưu bộ lọc mới
+    const handleFilterChange = (newFilters) => {
+        setPage(1);
+        setFilters(newFilters);
     };
 
     return {
         users,
         page,
-        handlePageInputChange,
-        handleBlur,
+        handlePageChange: setPage,
         totalPages,
+        total,
         loading,
         error,
-        total,
         fetchUsers,
+        filters,
+        handleFilterChange,
     };
 };

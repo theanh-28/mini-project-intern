@@ -3,6 +3,7 @@ import styles from './UsersPage.module.css';
 
 import UserTable from '@/components/iam/users/UserTable';
 import UserCreateModal from '@/components/iam/users/UserCreateModal';
+import UserFilter from '@/components/iam/users/UserFilter';
 import Pagination from '@/components/iam/users/Pagination';
 import Button from '@/components/common/Button';
 
@@ -29,6 +30,12 @@ export default function UsersPage() {
             </div>
 
             <div className={styles.content}>
+                <div className={styles.filter}>
+                    <UserFilter 
+                        filters={usersTable.filters}
+                        onFilterChange={usersTable.handleFilterChange}
+                    />
+                </div>
                 <div className={styles.table}>
                     <UserTable 
                         users={usersTable.users} 
@@ -41,8 +48,7 @@ export default function UsersPage() {
                     <Pagination
                         currentPage={usersTable.page}
                         totalPages={usersTable.totalPages}
-                        onPageChange={usersTable.handlePageInputChange}
-                        onBlur={usersTable.handleBlur}
+                        onPageChange={usersTable.handlePageChange}
                     />
                 </div>
             </div>

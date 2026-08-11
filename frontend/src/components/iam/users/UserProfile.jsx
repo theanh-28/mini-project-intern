@@ -3,7 +3,6 @@ import {
     Shield, 
     CircleCheck, 
     Ban, 
-    CheckCheckIcon, 
     Pencil,
     KeyRound,
     RotateCcw,
@@ -21,8 +20,6 @@ import { useUserActions } from '@/hooks/useUserActions';
 export default function UserProfile({
     user = {},
     setUser,
-    error,
-    loading,
 }) {
 
     const updateUser = useUpdateUser({user: user, setUser: setUser});
@@ -76,7 +73,7 @@ export default function UserProfile({
                     <div className={styles.infoRow}>
                         <span className={styles.label}>Role</span>
                         <span className={styles.role}>
-                            {user.is_admin ? (
+                            {user.roles?.includes('admin') ? (
                                 <div className={styles.roleAdmin}>
                                     <Shield strokeWidth={3} size={15} color='#6262f4' /> Admin
                                 </div>

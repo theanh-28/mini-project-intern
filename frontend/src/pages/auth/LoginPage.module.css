@@ -57,10 +57,13 @@
 
 .errorMsg {
   color: var(--color-error);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   text-align: center;
   width: fit-content;
-  padding: 3px 24px;
+  padding: 6px 16px;
   align-self: center;
-}
+  background-color: rgba(220, 38, 38, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}

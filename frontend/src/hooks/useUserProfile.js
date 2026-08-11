@@ -15,7 +15,7 @@ export const  useUserProfile = (userId) => {
         
         try {
             const data = await adminService.getUserById(userId);
-            setUser(data.user || {});
+            setUser(data.user || data || {});
         } catch (err) {
             const errData = err.response?.data?.error || err.response?.data?.detail || err.message;
             const errMsg = typeof errData === 'object' 

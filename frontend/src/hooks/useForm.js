@@ -41,8 +41,8 @@ export const useForm = (initialState = {}, validateFn) => {
         } catch (error) {
             // Xử lý lỗi từ API (Server-side errors)
             const errData = error.response?.data?.error || error.response?.data?.detail || error.message;
-            const serverError = typeof errData === 'object' 
-                ? (Array.isArray(errData) ? errData[0]?.msg : errData.msg || errData.message || JSON.stringify(errData)) 
+            const serverError = typeof errData === 'object'
+                ? (Array.isArray(errData) ? errData[0]?.msg : errData.msg || errData.message || JSON.stringify(errData))
                 : errData;
             setErrorMsg(serverError || 'Có lỗi xảy ra');
         } finally {

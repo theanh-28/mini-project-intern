@@ -1,52 +1,49 @@
-import { House, Users, BookText, ClipboardList} from 'lucide-react'
+import { House, Users, BookText, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import clsx from 'clsx';
 
 import styles from './Sidebar.module.css';
 import Avatar from '@/components/common/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { PATHS } from '@/constants/routes';
 
-export default function Sidebar() {
-    const {user} = useAuth();
+const MENU_ITEMS = [
+    { icon: House, label: 'Home', path: PATHS.HOME },
+    { icon: Users, label: 'Users', path: PATHS.ADMIN_USERS },
+    { icon: BookText, label: 'Requests', path: PATHS.REQUESTS },
+    { icon: ClipboardList, label: 'AUP', path: PATHS.AUP },
+];
+
+export default function Sidebar({ collapsed }) {
+    const { user } = useAuth();
+
     return (
-        <section className={styles.card}>
+        <section className={clsx(styles.card, collapsed && styles.collapsed)}>
             <div className={styles.userInfo}>
-                <Avatar name={user.name} size='md'></Avatar>
-                <span className={styles.userName}>
-                    {user.name}
-                </span>
+                <Avatar name={user?.name} size="md" style={{ cursor: 'default' }} />
+                <span className={styles.userName}>{user?.name}</span>
             </div>
+
             <div className={styles.menuSection}>
                 <h3 className={styles.sectionTitle}>
-                    Organization Management
+                    <span className={styles.sectionTitleText}>
+                        Organization Management
+                    </span>
                 </h3>
 
                 <ul className={styles.menuList}>
-
-                    <li className={styles.menuItem}>
-                        <Link className={styles.menuLink}>
-                            <House /> Home
-                        </Link>
-                    </li>
-
-                    <li className={styles.menuItem}>
-                        <Link to={PATHS.ADMIN_USERS} className={styles.menuLink}>
-                            <Users /> Users
-                        </Link>
-                    </li>
-
-                    <li className={styles.menuItem}>
-                        <Link className={styles.menuLink}>
-                            <ClipboardList /> Requests
-                        </Link>
-                    </li>
-
-                    <li className={styles.menuItem}>
-                        <Link className={styles.menuLink}>
-                            <BookText /> AUP
-                        </Link>
-                    </li>
-
+                    {MENU_ITEMS.map(({ icon: Icon, label, path }) => (
+                        <li
+                            key={path}
+                            className={styles.menuItem}
+                            title={collapsed ? label : undefined}
+                        >
+                            <Link to={path} className={styles.menuLink}>
+                                <span className={styles.menuIcon}><Icon /></span>
+                                <span className={styles.menuLabel}>{label}</span>
+                            </Link>
+                        </li>
+                    ))}
                 </ul>
             </div>
         </section>

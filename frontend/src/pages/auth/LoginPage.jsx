@@ -21,7 +21,7 @@ const LoginPage = () => {
     return (
         <section className={styles.card}>
             <div className={styles.header}>
-                <h2>Đăng nhập</h2>
+                <h2>Sign In</h2>
             </div>
 
             <form onSubmit={onSubmit} className={styles.form} noValidate>
@@ -65,11 +65,11 @@ const LoginPage = () => {
                 )}
 
                 <div className={styles.forgotLink}>
-                    <Link to={PATHS.FORGOT_PASSWORD}>Quên mật khẩu</Link>
+                    <Link to={PATHS.FORGOT_PASSWORD}>Forgot password?</Link>
                 </div>
 
                 <Button type="submit" isLoading={isSubmitting}>
-                    Đăng Nhập
+                    Sign In
                 </Button>
             </form>
         </section>

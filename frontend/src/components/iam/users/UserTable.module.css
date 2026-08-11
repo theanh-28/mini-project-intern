@@ -16,7 +16,7 @@ thead tr {
 }
 
 thead th {
-    padding: 10px;
+    padding: 8px;
     border-bottom: solid var(--color-border);
     border-width: 1px 0 1px 0;
 }
@@ -34,7 +34,7 @@ tbody tr:hover {
 }
 
 tbody td {
-    padding: 10px;
+    padding: 8px;
     border-bottom: solid var(--color-border);
     border-width: 1px 0 1px 0;
     text-align: left;

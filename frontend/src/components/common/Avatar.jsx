@@ -1,7 +1,7 @@
 import  { useState } from 'react';
 import styles from './Avatar.module.css';
 
-export default function Avatar({ src, name, size = 'md', shape = 'circle', className = ''}) {
+export default function Avatar({ src, name, size = 'md', shape = 'circle', className = '', style }) {
     const [isError, setIsError] = useState(false);
 
     // Lấy ký tự đầu của tên làm chữ đại diện (loại bỏ dấu tiếng Việt)
@@ -29,6 +29,7 @@ export default function Avatar({ src, name, size = 'md', shape = 'circle', class
                 src={src}
                 alt={name || 'User Avatar'} 
                 className={avatarClass} 
+                style={style}
                 onError={() => setIsError(true)}
             />
         );
@@ -36,7 +37,7 @@ export default function Avatar({ src, name, size = 'md', shape = 'circle', class
 
     // Nếu ảnh bị lỗi
     return (
-        <div className={`${avatarClass} ${styles.placeholder}`}>
+        <div className={`${avatarClass} ${styles.placeholder}`} style={style}>
             {getInitials(name)}
         </div>
     )

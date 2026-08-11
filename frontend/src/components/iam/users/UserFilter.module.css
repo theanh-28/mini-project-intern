@@ -1,0 +1,113 @@
+.filterBarScroll {
+    overflow-x: auto;
+    margin-bottom: 1px;
+}
+
+.filterBar {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 12px 16px;
+    overflow: visible;
+}
+
+.searchBox {
+    width: 250px;
+    flex: none;
+}
+
+.searchBox div:hover {
+    transform: none;
+}
+
+.searchInput {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px 0 36px;
+    font-size: 14px;
+    color: var(--color-text, #0f172a);
+    background-color: #fff;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    border-color: var(--color-primary, #25a2eb);
+    box-shadow: 0 0 0 3px rgba(37, 162, 235, 0.15);
+    background-color: #ffffff;
+}
+
+.selectWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.selectInput {
+    height: 38px;
+    padding: 0 32px 0 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--color-text, #0f172a);
+    background-color: #fff;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+}
+
+.selectInput:hover {
+    border-color: var(--color-primary, #25a2eb);
+    background-color: var(--color-bg, #f8fafc);
+}
+
+.selectInput:focus,
+.selectInput.active {
+    border-color: var(--color-primary, #25a2eb);
+    box-shadow: 0 0 0 3px rgba(37, 162, 235, 0.15);
+    background-color: #ffffff;
+}
+
+.selectIcon {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    color: var(--color-text, #0f172a);
+}
+
+
+.clearBtn {
+    width: fit-content;   /* ghi đè width: 100% từ Button.module.css */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text, #0f172a);
+    background-color: #fff;
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.clearBtn:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+    color: var(--color-error, #dc2626);
+    background-color: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+.clearBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

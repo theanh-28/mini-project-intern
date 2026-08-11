@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useForm } from '@/hooks/useForm';
 import { adminService } from '@/services/adminService';
@@ -47,16 +47,18 @@ export const useUpdateUser = ({user, setUser}) => {
         is_active: user?.is_active ?? false,
     }, validateUpdate);
 
+    const { setValues } = form;
+
     // Đồng bộ form values khi user data được fetch xong
     useEffect(() => {
         if (user?.name) {
-            form.setValues({
+            setValues({
                 name: user.name,
                 email: user.email,
                 is_active: user.is_active,
             });
         }
-    }, [user]);
+    }, [user, setValues]);
 
     const resetForm = () => {
         form.setErrorMsg('');
@@ -66,22 +68,36 @@ export const useUpdateUser = ({user, setUser}) => {
             email: user?.email || '',
             is_active: user?.is_active ?? false,
         });
-    }
+    };
 
     const openModal = () => {
+        resetForm();
         setIsOpen(true);
-    }
+    };
 
     const closeModal = () => {
-        resetForm();
         setIsOpen(false);
-    }
+    };
 
     const handleUpdate = async (userData) => {
-        const data = await adminService.updateUser({userData: userData, userId: user.user_id});
+        const isUnchanged =
+            userData.name?.trim() === user?.name?.trim() &&
+            userData.email?.trim() === user?.email?.trim() &&
+            Boolean(userData.is_active) === Boolean(user?.is_active);
+
+        // Nếu thông tin hoàn toàn giống hệt hiện tại, hiển thị thông báo, không gửi request
+        if (isUnchanged) {
+            form.setErrorMsg('Thông tin không có sự thay đổi');
+            return;
+        }
+
+        const data = await adminService.updateUser({ userData: userData, userId: user.user_id });
         setUser(data);
-        closeModal();
-    }
+        form.setMsgSuccess('Cập nhật thông tin thành công!');
+        setTimeout(() => {
+            closeModal();
+        }, 1000);
+    };
 
     return {
         ...form,

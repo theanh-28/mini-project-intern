@@ -77,7 +77,7 @@
 
 .btns {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   padding-top: 20px;
   border-top: 1px solid #e3e2e2;
@@ -111,4 +111,30 @@
   background-color: #d5d5d5;
   box-shadow: none;
   transform: none;
+}
+
+.errorMsg {
+  color: var(--color-error, #dc2626);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  width: fit-content;
+  padding: 6px 16px;
+  align-self: center;
+  background-color: rgba(220, 38, 38, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.successMsg {
+  color: var(--color-success, #16a34a);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  width: fit-content;
+  padding: 6px 16px;
+  align-self: center;
+  background-color: rgba(22, 163, 74, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(22, 163, 74, 0.2);
 }
