@@ -4,6 +4,8 @@ import ProtectedRoute from '@/routes/ProtectedRoute';
 
 import AuthLayout from '@/layouts/auth_layout/AuthLayout';
 import LoginPage from '@/pages/auth/LoginPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 
 import IAMLayout from '@/layouts/iam_layout/IAMLayout';
 import UsersPage from '@/pages/iam/users_page/UsersPage';
@@ -20,6 +22,8 @@ export default function AppRoutes() {
       {/* Public routes */}
       <Route element={<AuthLayout />}>
         <Route path={PATHS.LOGIN} element={<LoginPage />} />
+        <Route path={PATHS.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+        <Route path={PATHS.RESET_PASSWORD} element={<ResetPasswordPage />} />
       </Route>
 
       {/* Protected Admin routes */}

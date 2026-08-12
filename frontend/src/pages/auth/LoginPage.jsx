@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { EyeOff, Eye } from 'lucide-react';
+import { EyeOff, Eye, Mail, Lock } from 'lucide-react';
 
 import { useLogin } from '@/hooks/useLogin';
 import { PATHS } from '@/constants/routes';
@@ -34,6 +34,7 @@ const LoginPage = () => {
                     value={values.email}
                     onChange={handleChange}
                     disabled={isSubmitting}
+                    leftIcon={<Mail size={18} strokeWidth={3}/>}
                     required
                 />
 
@@ -46,6 +47,7 @@ const LoginPage = () => {
                     value={values.password}
                     onChange={handleChange}
                     disabled={isSubmitting}
+                    leftIcon={<Lock size={18} strokeWidth={3}/>}
                     required
                     rightIcon={
                         <button
