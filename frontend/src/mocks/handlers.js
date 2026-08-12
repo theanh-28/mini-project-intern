@@ -5,7 +5,7 @@ const payload = {
   "sub": 0,
   "roles": ["admin"],
   "exp": 9257888000,
-}
+};
 const mockPayload = btoa(JSON.stringify(payload));
 const mockHeader = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
 const mockSignature = "mock_signature";
@@ -13,7 +13,7 @@ const mockSignature = "mock_signature";
 // Ghép thành token hợp lệ về mặt cấu trúc
 const devToken = `${mockHeader}.${mockPayload}.${mockSignature}`;
 
-// tạo dữ liệu user  mẫu ban đầu
+// tạo dữ liệu user mẫu ban đầu
 let users = Array.from({ length: 200 }, (_, i) => {
   const id = i + 1;
   return {
@@ -24,8 +24,8 @@ let users = Array.from({ length: 200 }, (_, i) => {
     roles: i % 5 === 0 ? ['admin'] : ['user'],
     created_at: new Date(Date.now() - i * 86400000).toISOString(),
     last_login: i % 5 === 0 ? null : new Date(Date.now() - (i - 1) * 86400000).toISOString()
-  }
-})
+  };
+});
 
 // Đồng bộ URL với api.js
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -62,12 +62,12 @@ export const handlers = [
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const perPage = parseInt(url.searchParams.get('per_page') || '20', 10);
-    const search = url.searchParams.get('search')?.toLowerCase() || '';
-    const status = url.searchParams.get('status') || '';
-    const isActiveParam = url.searchParams.get('is_active');
+    const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+
+    const rawIsActive = url.searchParams.get('is_active');
     const role = url.searchParams.get('role') || '';
-    const startDate = url.searchParams.get('start_date') || url.searchParams.get('created_at_from') || '';
-    const endDate = url.searchParams.get('end_date') || url.searchParams.get('created_at_to') || '';
+    const startDate = url.searchParams.get('created_at_from') || url.searchParams.get('start_date') || '';
+    const endDate = url.searchParams.get('created_at_to') || url.searchParams.get('end_date') || '';
 
     let filteredUsers = [...users];
 
@@ -80,13 +80,10 @@ export const handlers = [
       );
     }
 
-    // Lọc theo Status (active / inactive / is_active)
-    if (isActiveParam !== null && isActiveParam !== undefined) {
-      const activeBool = isActiveParam === 'true' || isActiveParam === true;
-      filteredUsers = filteredUsers.filter((u) => u.is_active === activeBool);
-    } else if (status === 'active') {
+    // Lọc theo is_active
+    if (rawIsActive === 'true' || rawIsActive === true) {
       filteredUsers = filteredUsers.filter((u) => u.is_active === true);
-    } else if (status === 'inactive') {
+    } else if (rawIsActive === 'false' || rawIsActive === false) {
       filteredUsers = filteredUsers.filter((u) => u.is_active === false);
     }
 
@@ -107,7 +104,7 @@ export const handlers = [
 
     // Tính toán phân trang
     const total = filteredUsers.length;
-    const totalPages = Math.ceil(total / perPage);
+    const totalPages = Math.ceil(total / perPage) || 1;
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
@@ -149,7 +146,7 @@ export const handlers = [
     const user = users.find((u) => u.user_id === user_id);
 
     if (user) {
-      user.is_active = false
+      user.is_active = false;
       return HttpResponse.json('', { status: 204 });
     }
     return HttpResponse.json('User Not Found', { status: 404 });
@@ -180,7 +177,6 @@ export const handlers = [
       return HttpResponse.json({ ...user }, { status: 200 });
     }
     return HttpResponse.json('User Not Found', { status: 404 });
-
   }),
 
   // PUT /admin/users/:user_id
@@ -199,6 +195,5 @@ export const handlers = [
     }
 
     return HttpResponse.json('User Not Found', { status: 404 });
-  })
-
-]
+  }),
+];

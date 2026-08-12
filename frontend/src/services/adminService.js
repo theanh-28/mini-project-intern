@@ -2,9 +2,7 @@ import api from './api';
 
 export const adminService = {
     getUsers: async ({ page = 1, per_page = 20, search = '', status = '', role = '', startDate = '', endDate = '' }) => {
-        let is_active = undefined;
-        if (status === 'active') is_active = true;
-        if (status === 'inactive') is_active = false;
+        const is_active = status === 'active' ? true : status === 'inactive' ? false : undefined;
 
         const response = await api.get('/admin/users', {
             params: {

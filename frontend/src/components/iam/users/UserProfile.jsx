@@ -87,12 +87,16 @@ export default function UserProfile({
 
                     <div className={styles.infoRow}>
                         <span className={styles.label}>Created</span>
-                        <span className={styles.value}>{user.created_at}</span>
+                        <span className={styles.value}>
+                            {user.created_at ? new Date(user.created_at).toLocaleString() : '-'}
+                        </span>
                     </div>
 
                     <div className={styles.infoRow}>
                         <span className={styles.label}>Last login</span>
-                        <span className={styles.value}>{user.last_login}</span>
+                        <span className={styles.value}>
+                            {user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}
+                        </span>
                     </div>
                 </div>
 

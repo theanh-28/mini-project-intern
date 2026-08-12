@@ -9,20 +9,14 @@ const EMPTY_FILTERS = {
 };
 
 export const useUserFilters = ({ filters, onFilterChange }) => {
-    const [searchBuffer, setSearchBuffer] = useState(filters?.search || '');
-    const [openSelect, setOpenSelect]     = useState(null);
+    // Local draft state chứa các giá trị đang chọn trong form lọc trước khi bấm nút Filter
+    const [draftFilters, setDraftFilters] = useState(filters || EMPTY_FILTERS);
+    const [openSelect, setOpenSelect] = useState(null);
 
-    // Đồng bộ searchBuffer khi Clear filters được bấm từ bên ngoài
+    // Đồng bộ draftFilters khi filters từ bên ngoài thay đổi
     useEffect(() => {
-        setSearchBuffer(filters?.search || '');
-    }, [filters?.search]);
-
-    const commitSearch = () => {
-        const trimmed = searchBuffer.trim();
-        if (trimmed !== filters.search) {
-            onFilterChange({ ...filters, search: trimmed });
-        }
-    };
+        setDraftFilters(filters || EMPTY_FILTERS);
+    }, [filters]);
 
     const handleSelectClick = (field, e) => {
         if (openSelect === field) {
@@ -33,32 +27,51 @@ export const useUserFilters = ({ filters, onFilterChange }) => {
         }
     };
 
-    const handleSelectChange = (field, value, e) => {
-        onFilterChange({ ...filters, [field]: value });
+    const handleSelectBlur = () => {
         setOpenSelect(null);
-        if (e?.target) e.target.blur();
+    };
+
+    const handleDraftChange = (field, value) => {
+        setDraftFilters((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleDateRangeChange = (startDate, endDate) => {
+        setDraftFilters((prev) => ({ ...prev, startDate, endDate }));
+    };
+
+    // Hàm submit bộ lọc: Bắt buộc bấm nút Filter hoặc gõ Enter
+    const applyFilters = () => {
+        setOpenSelect(null);
+        onFilterChange(draftFilters);
+    };
+
+    // Hàm xóa sạch bộ lọc
+    const clearFilters = () => {
+        setOpenSelect(null);
+        setDraftFilters(EMPTY_FILTERS);
+        onFilterChange(EMPTY_FILTERS);
     };
 
     const isFiltered = Object.values(filters).some(Boolean);
+    const isDraftActive = Object.values(draftFilters).some(Boolean);
 
     return {
-        searchBuffer,
-        setSearchBuffer,
+        draftFilters,
         openSelect,
         handleSelectClick,
-        handleSelectBlur: () => setOpenSelect(null),
-        // Bấm Enter trên ô Search → commit ngay
-        handleSearchKeyDown: (e) => e.key === 'Enter' && e.target.blur(),
-        handleSearchBlur: commitSearch,
-        // Thay đổi select Status / Role / Date → cập nhật ngay
-        handleSelectChange,
-        handleDateRangeChange: (startDate, endDate) => onFilterChange({ ...filters, startDate, endDate }),
-        clearFilters: () => {
-            setSearchBuffer('');
-            setOpenSelect(null);
-            onFilterChange(EMPTY_FILTERS);
+        handleSelectBlur,
+        handleDraftChange,
+        handleDateRangeChange,
+        handleSearchKeyDown: (e) => {
+            if (e.key === 'Enter') {
+                e.target.blur();
+                applyFilters();
+            }
         },
+        applyFilters,
+        clearFilters,
         isFiltered,
+        isDraftActive,
     };
 };
 

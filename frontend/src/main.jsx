@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-/*
+
 async function enableMocking() {
   if (import.meta.env.DEV) {
     const { worker } = await import('./mocks/browser')
@@ -18,10 +18,10 @@ async function enableMocking() {
 
 
 enableMocking().then(() => {
-*/
+
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />
     </StrictMode>,
   )
-//})
+})

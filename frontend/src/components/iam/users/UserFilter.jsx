@@ -1,4 +1,4 @@
-import { Search, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, RotateCcw, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import styles from './UserFilter.module.css';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
@@ -7,17 +7,17 @@ import { useUserFilters } from '@/hooks/useUserFilters';
 
 export default function UserFilter({ filters, onFilterChange }) {
     const {
-        searchBuffer,
-        setSearchBuffer,
+        draftFilters,
         openSelect,
         handleSelectClick,
         handleSelectBlur,
-        handleSearchKeyDown,
-        handleSearchBlur,
-        handleSelectChange,
+        handleDraftChange,
         handleDateRangeChange,
+        handleSearchKeyDown,
+        applyFilters,
         clearFilters,
         isFiltered,
+        isDraftActive,
     } = useUserFilters({ filters, onFilterChange });
 
     return (
@@ -27,10 +27,9 @@ export default function UserFilter({ filters, onFilterChange }) {
                 <Input
                     type="text"
                     placeholder="Search name or email"
-                    value={searchBuffer}
-                    onChange={(e) => setSearchBuffer(e.target.value)}
+                    value={draftFilters.search}
+                    onChange={(e) => handleDraftChange('search', e.target.value)}
                     onKeyDown={handleSearchKeyDown}
-                    onBlur={handleSearchBlur}
                     leftIcon={<Search size={16} />}
                     containerClassName={styles.searchBox}
                     className={styles.searchInput}
@@ -39,10 +38,13 @@ export default function UserFilter({ filters, onFilterChange }) {
                 {/* Ô Lọc Status */}
                 <div className={styles.selectWrapper}>
                     <select
-                        className={`${styles.selectInput} ${filters.status || openSelect === 'status' ? styles.active : ''}`}
-                        value={filters.status}
+                        className={`${styles.selectInput} ${draftFilters.status || openSelect === 'status' ? styles.active : ''}`}
+                        value={draftFilters.status}
                         onClick={(e) => handleSelectClick('status', e)}
-                        onChange={(e) => handleSelectChange('status', e.target.value, e)}
+                        onChange={(e) => {
+                            handleDraftChange('status', e.target.value);
+                            handleSelectBlur();
+                        }}
                         onBlur={handleSelectBlur}
                     >
                         <option value="">All Status</option>
@@ -56,13 +58,16 @@ export default function UserFilter({ filters, onFilterChange }) {
                     )}
                 </div>
 
-                {/* Ô Lọc Role */}
+                {/* Ô Lọc Role (Giữ lại phục vụ mô hình RBAC) */}
                 <div className={styles.selectWrapper}>
                     <select
-                        className={`${styles.selectInput} ${filters.role || openSelect === 'role' ? styles.active : ''}`}
-                        value={filters.role}
+                        className={`${styles.selectInput} ${draftFilters.role || openSelect === 'role' ? styles.active : ''}`}
+                        value={draftFilters.role}
                         onClick={(e) => handleSelectClick('role', e)}
-                        onChange={(e) => handleSelectChange('role', e.target.value, e)}
+                        onChange={(e) => {
+                            handleDraftChange('role', e.target.value);
+                            handleSelectBlur();
+                        }}
                         onBlur={handleSelectBlur}
                     >
                         <option value="">All Roles</option>
@@ -78,17 +83,27 @@ export default function UserFilter({ filters, onFilterChange }) {
 
                 {/* Popover Date Range Picker */}
                 <DateRangePicker
-                    startDate={filters.startDate}
-                    endDate={filters.endDate}
+                    startDate={draftFilters.startDate}
+                    endDate={draftFilters.endDate}
                     onChange={handleDateRangeChange}
                 />
 
-                {/* Nút Clear Filters luôn hiển thị ngang hàng */}
+                {/* Nút Submit Lọc */}
+                <Button
+                    type="button"
+                    className={styles.filterBtn}
+                    onClick={applyFilters}
+                    title="Apply Filters"
+                >
+                    <Filter size={14} /> Filter
+                </Button>
+
+                {/* Nút Clear Filters */}
                 <Button
                     type="button"
                     className={styles.clearBtn}
                     onClick={clearFilters}
-                    disabled={!isFiltered}
+                    disabled={!isFiltered && !isDraftActive}
                     title="Clear All Filters"
                 >
                     <RotateCcw size={14} /> Clear filters

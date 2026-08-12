@@ -81,6 +81,34 @@
 }
 
 
+.filterBtn {
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--color-primary, #2563eb) 0%, var(--color-primary-hover, #1d4ed8) 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.filterBtn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.filterBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
 .clearBtn {
     width: fit-content;   /* ghi đè width: 100% từ Button.module.css */
     display: flex;
