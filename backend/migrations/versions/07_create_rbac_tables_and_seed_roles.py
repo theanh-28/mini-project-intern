@@ -45,8 +45,9 @@ def upgrade() -> None:
         sa.UniqueConstraint('resource', 'action', name='uq_permission_resource_action')
     )
 
-    # Thêm cột updated_at cho bảng users hiện tại
+    # Thêm cột updated_at và must_change_password cho bảng users hiện tại
     op.add_column('users', sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
+    op.add_column('users', sa.Column('must_change_password', sa.Boolean(), server_default='0', nullable=False))
 
     # Tạo index cho actor_id ở bảng audit_logs hiện tại
     op.create_index(op.f('ix_audit_logs_actor_id'), 'audit_logs', ['actor_id'], unique=False)
@@ -111,6 +112,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index(op.f('ix_audit_logs_actor_id'), table_name='audit_logs')
+    op.drop_column('users', 'must_change_password')
     op.drop_column('users', 'updated_at')
     op.drop_table('role_permissions')
     op.drop_table('user_roles')
