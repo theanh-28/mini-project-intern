@@ -8,8 +8,11 @@ services:
       - name: public-routes
         paths:
           - /auth/login
+          - /auth/forgot-password
+          - /auth/reset-password
         methods:
           - POST
+          - OPTIONS
         strip_path: false  
         plugins:
           - name: rate-limiting
@@ -33,7 +36,8 @@ services:
           - GET
           - POST
           - PUT
-          - DELETE  
+          - DELETE
+          - OPTIONS
         strip_path: false
         plugins: 
           - name: jwt
@@ -68,6 +72,23 @@ services:
               error_code: 429
               error_message: "Bạn đã vượt quá giới hạn request, vui lòng thử lại sau."
 
+plugins:
+  - name: cors
+    config:
+      origins:
+        - ${URL_FRONTEND}
+        - ${URL_FRONTEND_IP}
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Content-Type
+        - Authorization
+      credentials: true
 
 consumers:
   - username: iam

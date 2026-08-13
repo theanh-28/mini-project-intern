@@ -10,10 +10,16 @@ class LoginRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+class UserInfo(BaseModel):
+    user_id: int
+    name: str
+    email: EmailStr
+    is_admin: bool
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    is_admin: bool
+    user: UserInfo
 
 
 class ForgotPasswordRequest(BaseModel):
