@@ -17,7 +17,7 @@ event.listen(Session, "after_flush", after_flush_listener)
 
 logger = logging.getLogger(__name__)
 
-def create_app():
+def create_app(test_config: dict = None):
     app = Flask(__name__)
 
     @app.route('/')
@@ -26,10 +26,24 @@ def create_app():
     
     # Cấu hình ứng dụng
     app.config['DEBUG'] = settings.debug
+    if test_config:
+        app.config.update(test_config)
 
     # Khởi tạo các extensions
     from app.core.extensions import init_mail
     init_mail(app)
+
+    # Khởi tạo In-Memory RBAC Registry
+    try:
+        from app.db.session import SessionLocal
+        from app.core.rbac import rbac_registry
+        db = SessionLocal()
+        try:
+            rbac_registry.load_permissions(db)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(f"Chưa thể nạp RBAC Registry khi khởi động app (có thể do DB chưa migrate hoặc test): {e}")
 
     # Đăng ký before_request 
     from app.core.hook import login_required

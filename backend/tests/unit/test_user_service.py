@@ -25,30 +25,49 @@ def test_auth_user_success(make_user_service, user_example):
     """
     Test trường hợp xác thực thành công khi truyền đúng email + password
     """
+    user_example.must_change_password = False
     user_service = make_user_service(get_by_email=user_example)
-    user = user_service.auth_user(email=user_example.email, password="123456")
+    result = user_service.auth_user(email=user_example.email, password="123456")
 
-    assert user == user_example
+    assert result["require_password_change"] is False
+    assert result["user"] == user_example
+    assert "access_token" in result
+    assert "roles" in result
+    assert "permissions" in result
+
+def test_auth_user_must_change_password_generates_reset_token(make_user_service, user_example):
+    """
+    Test trường hợp user có must_change_password=True -> sinh reset token và không cấp JWT
+    """
+    user_example.must_change_password = True
+    user_service = make_user_service(get_by_email=user_example)
+    result = user_service.auth_user(email=user_example.email, password="123456")
+
+    assert result["require_password_change"] is True
+    assert "reset_url" in result
+    assert result["user"] == user_example
+    user_service.redis_service.save_reset_token.assert_called_once()
+    user_service.user_repository.update_last_login.assert_not_called()
 
 def test_auth_user_email_not_found(make_user_service):
     """
-    Test trường hợp truyền vào email không tồn tại
+    Test trường hợp truyền vào email không tồn tại -> InvalidCredentialsError
     """
-    from app.core.exceptions import EmailNotFoundError
+    from app.core.exceptions import InvalidCredentialsError
     user_service = make_user_service(get_by_email=None)
-    with pytest.raises(EmailNotFoundError) as excinfo:
+    with pytest.raises(InvalidCredentialsError) as excinfo:
         user_service.auth_user(email="user_1@example.com", password="123456")
-    assert str(excinfo.value) == "Email không tồn tại"
+    assert str(excinfo.value) == "Email hoặc mật khẩu không chính xác"
 
 def test_auth_user_wrong_password(make_user_service, user_example):
     """
-    Test trường hợp nhập sai mật khẩu
+    Test trường hợp nhập sai mật khẩu -> InvalidCredentialsError
     """
-    from app.core.exceptions import WrongPasswordError
+    from app.core.exceptions import InvalidCredentialsError
     user_service = make_user_service(get_by_email=user_example)
-    with pytest.raises(WrongPasswordError) as excinfo:
+    with pytest.raises(InvalidCredentialsError) as excinfo:
         user_service.auth_user(email=user_example.email, password="wrong_password")
-    assert str(excinfo.value) == "Mật khẩu không đúng"
+    assert str(excinfo.value) == "Email hoặc mật khẩu không chính xác"
 
 def test_auth_user_inactive_account(make_user_service, user_example):
     """
@@ -65,27 +84,28 @@ def test_auth_user_calls_update_last_login(make_user_service, user_example):
     """
     Test trường hợp xác thực thành công sẽ gọi update_last_login
     """
+    user_example.must_change_password = False
     user_service = make_user_service(get_by_email=user_example)
-    user = user_service.auth_user(email=user_example.email, password="123456")
+    result = user_service.auth_user(email=user_example.email, password="123456")
 
-    assert user == user_example
+    assert result["user"] == user_example
     user_service.user_repository.update_last_login.assert_called_once_with(user_example)
 
 def test_auth_user_does_not_commit_on_failure(make_user_service, user_example):
     """
     Test trường hợp xác thực thất bại không gọi ghi đè thông tin đăng nhập
     """
-    from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError
+    from app.core.exceptions import InvalidCredentialsError, AccountLockedError
 
     # 1. Sai email
     user_service_1 = make_user_service(get_by_email=None)
-    with pytest.raises(EmailNotFoundError):
+    with pytest.raises(InvalidCredentialsError):
         user_service_1.auth_user(email="nonexistent@example.com", password="123")
     user_service_1.user_repository.update_last_login.assert_not_called()
 
     # 2. Sai mật khẩu
     user_service_2 = make_user_service(get_by_email=user_example)
-    with pytest.raises(WrongPasswordError):
+    with pytest.raises(InvalidCredentialsError):
         user_service_2.auth_user(email=user_example.email, password="wrong_password")
     user_service_2.user_repository.update_last_login.assert_not_called()
 
@@ -501,7 +521,7 @@ def test_get_user_by_reset_token_success(make_user_service, user_example):
 
     assert user == user_example
     user_service.redis_service.get_user_id_by_reset_token.assert_called_once_with(reset_token="valid_token")
-    user_service.user_repository.get_by_id.assert_called_once_with(id=str(user_example.user_id))
+    user_service.user_repository.get_by_id.assert_called_once_with(user_example.user_id)
 
 
 def test_get_user_by_reset_token_invalid_token(make_user_service):
@@ -532,15 +552,16 @@ def test_get_user_by_reset_token_user_not_found(make_user_service):
 
 def test_get_user_by_reset_token_user_inactive(make_user_service, user_example):
     """
-    Token hợp lệ nhưng tài khoản User bị khóa (inactive) -> Ném lỗi UserNotFoundError
+    Token hợp lệ nhưng tài khoản User bị khóa (inactive) -> Ném lỗi AccountLockedError
     """
-    from app.core.exceptions import UserNotFoundError
+    from app.core.exceptions import AccountLockedError
     user_example.is_active = False
     user_service = make_user_service(get_by_id=user_example)
     user_service.redis_service.get_user_id_by_reset_token.return_value = str(user_example.user_id)
 
-    with pytest.raises(UserNotFoundError) as excinfo:
+    with pytest.raises(AccountLockedError) as excinfo:
         user_service.get_user_by_reset_token(reset_token="valid_token")
+    assert "Tài khoản đang bị khóa" in str(excinfo.value)
 
 
 # ====== TEST HÀM RESET_PASSWORD_USER ======

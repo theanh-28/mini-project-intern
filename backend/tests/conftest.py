@@ -4,7 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.models import User
+from app.models.role import Role
+from app.models.permission import Permission, ActionEnum
 from app.core.security import hash_password, create_access_token
+from app.core.rbac import rbac_registry
 from app.db.base import Base
 from app import create_app
 
@@ -13,50 +16,57 @@ def user_example():
     """
     User seed
     """
-    return User(
+    user = User(
         user_id=1,
         name="user_1",
         email="user_1@example.com",
         password=hash_password("123456"),
-        is_active=True
+        is_active=True,
+        must_change_password=False,
     )
+    user.roles = [Role(role_id=2, name="Regular User", code="user", is_system=True)]
+    return user
 
 @pytest.fixture
 def admin_example():
     """
     Admin seed
     """
-    return User(
+    admin = User(
         user_id=999,
         name="admin_1",
         email="admin_1@example.com",
         password=hash_password("123456"),
         is_active=True,
-        is_admin=True
+        must_change_password=False,
     )
+    admin.roles = [Role(role_id=1, name="Administrator", code="admin", is_system=True)]
+    return admin
 
 @pytest.fixture
 def access_token(user_example):
     """
-    Tạo access token cho user thường (is_admin=False)
+    Tạo access token cho user thường (roles=['user'])
     """
-    return create_access_token(user_example.user_id, user_example.is_admin)
+    roles = [r.code for r in user_example.roles] or ["user"]
+    return create_access_token(user_example.user_id, roles=roles)
 
 @pytest.fixture
 def admin_token(admin_example):
     """
-    Tạo access token cho admin (is_admin=True)
+    Tạo access token cho admin (roles=['admin'])
     """
-    return create_access_token(admin_example.user_id, admin_example.is_admin)
+    roles = [r.code for r in admin_example.roles] or ["admin"]
+    return create_access_token(admin_example.user_id, roles=roles)
 
 @pytest.fixture
 def db_session():
     """
-    Thiết lập phiên kết nối Database với DB SQLite trên RAM
+    Thiết lập phiên kết nối Database với DB SQLite trên RAM và seed RBAC ban đầu
     """
     # 1. Tạo Engine kết nối tới SQLite chạy trên RAM 
     engine = create_engine("sqlite:///:memory:",
-                           connect_args = {"check_same_thread": False})
+                           connect_args={"check_same_thread": False})
 
     # 2. Khởi tạo tất cả bảng từ Model
     Base.metadata.create_all(bind=engine)
@@ -68,6 +78,25 @@ def db_session():
                                     expire_on_commit=False)
     session = TestSessionLocal()
 
+    # Seed roles và permissions mẫu
+    admin_role = Role(role_id=1, name="Administrator", code="admin", is_system=True)
+    user_role = Role(role_id=2, name="Regular User", code="user", is_system=True)
+
+    perm_read_users = Permission(permission_id=1, name="Read Users", resource="users", action=ActionEnum.READ)
+    perm_create_users = Permission(permission_id=2, name="Create User", resource="users", action=ActionEnum.CREATE)
+    perm_update_users = Permission(permission_id=3, name="Update User", resource="users", action=ActionEnum.UPDATE)
+    perm_delete_users = Permission(permission_id=4, name="Delete User", resource="users", action=ActionEnum.DELETE)
+    perm_read_roles = Permission(permission_id=5, name="Read Roles", resource="roles", action=ActionEnum.READ)
+    perm_assign_roles = Permission(permission_id=6, name="Assign Roles", resource="roles", action=ActionEnum.ASSIGN)
+    perm_read_audit = Permission(permission_id=7, name="Read Audit Logs", resource="audit_logs", action=ActionEnum.READ)
+
+    admin_role.permissions.extend([perm_read_users, perm_create_users, perm_update_users, perm_delete_users, perm_read_roles, perm_assign_roles, perm_read_audit])
+
+    session.add_all([admin_role, user_role, perm_read_users, perm_create_users, perm_update_users, perm_delete_users, perm_read_roles, perm_assign_roles, perm_read_audit])
+    session.commit()
+
+    # Nạp In-Memory RBAC Registry
+    rbac_registry.load_permissions(session)
 
     try:
         # 4. Cấp session cho hàm test
@@ -80,13 +109,9 @@ def db_session():
 @pytest.fixture
 def app(db_session):
     """
-    Khởi tạo app Flask câu hình ở chế độ Testing
+    Khởi tạo app Flask cấu hình ở chế độ Testing
     """
-
-    app_instance = create_app()
-    app_instance.config.update({
-        "TESTING": True
-    })
+    app_instance = create_app(test_config={"TESTING": True})
 
     # Ghi đè get_db() bằng db_session để trả về session làm việc với SQLite trong RAM
     # Tránh kết nối DB thật khi test

@@ -24,12 +24,13 @@ def test_login_when_credentials_is_valid_return_200_and_token(client, insert_use
     assert data['user']['user_id'] == insert_user.user_id
     assert data['user']['name'] == insert_user.name
     assert data['user']['email'] == insert_user.email
-    assert data['user']['is_admin'] is False
+    assert 'user' in data['user']['roles']
+    assert data['user']['permissions'] == []
 
 
-def test_login_when_user_is_admin_return_200_and_is_admin_true(client, insert_admin):
+def test_login_when_user_is_admin_return_200_and_admin_role(client, insert_admin):
     """
-    Trường hợp admin login thành công, kiểm tra is_admin=True trong response
+    Trường hợp admin login thành công, kiểm tra role admin và full permissions trong response
     """
     response = client.post(
         '/auth/login',
@@ -46,13 +47,15 @@ def test_login_when_user_is_admin_return_200_and_is_admin_true(client, insert_ad
     assert data['user']['user_id'] == insert_admin.user_id
     assert data['user']['name'] == insert_admin.name
     assert data['user']['email'] == insert_admin.email
-    assert data['user']['is_admin'] is True
+    assert 'admin' in data['user']['roles']
+    assert 'users:read' in data['user']['permissions']
+    assert 'users:delete' in data['user']['permissions']
 
 
-def test_login_when_email_is_incorrect_return_404(client):
+def test_login_when_email_is_incorrect_return_401(client):
     """
-    Trường hợp xác thực thất bại vì email sai
-    Trả về status code 404
+    Trường hợp xác thực thất bại vì email sai (chống user enumeration)
+    Trả về status code 401 và mã lỗi INVALID_CREDENTIALS
     """
     response = client.post(
         '/auth/login',
@@ -62,13 +65,15 @@ def test_login_when_email_is_incorrect_return_404(client):
         }
     )
 
-    assert response.status_code == 404
+    data = response.get_json()
+    assert response.status_code == 401
+    assert data['code'] == "INVALID_CREDENTIALS"
 
 
 def test_login_when_password_is_incorrect_return_401(client, insert_user):
     """
     Trường hợp đúng email nhưng sai password
-    Trả về status code 401
+    Trả về status code 401 và mã lỗi INVALID_CREDENTIALS
     """
     response = client.post(
         '/auth/login',
@@ -78,7 +83,9 @@ def test_login_when_password_is_incorrect_return_401(client, insert_user):
         }
     )
 
+    data = response.get_json()
     assert response.status_code == 401
+    assert data['code'] == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.parametrize('payload', [
@@ -156,3 +163,71 @@ def test_login_when_credentials_is_valid_updates_last_login_in_db(client, db_ses
 
     db_session.refresh(insert_user)
     assert insert_user.last_login is not None
+
+
+def test_login_when_user_is_soft_deleted_return_401(client, db_session):
+    """
+    Trường hợp tài khoản đã bị xóa mềm (deleted_at IS NOT NULL)
+    Trả về status code 401 (coi như không tồn tại thông tin đăng nhập hợp lệ)
+    """
+    from datetime import datetime, timezone
+    deleted_user = User(
+        name="deleted_user",
+        email="deleted@example.com",
+        password=hash_password("123456"),
+        is_active=True,
+        deleted_at=datetime.now(timezone.utc)
+    )
+    db_session.add(deleted_user)
+    db_session.commit()
+
+    response = client.post(
+        '/auth/login',
+        json={
+            'email': deleted_user.email,
+            'password': '123456'
+        }
+    )
+    data = response.get_json()
+    assert response.status_code == 401
+    assert data['code'] == "INVALID_CREDENTIALS"
+
+
+def test_login_when_must_change_password_is_true_returns_notice_and_no_jwt(client, db_session, mock_redis):
+    """
+    Trường hợp user có must_change_password=True:
+    Trả về HTTP 200, require_password_change=True, KHÔNG cấp access_token và gửi link qua Email.
+    """
+    from app.core.extensions import mail
+
+    new_user = User(
+        name="must_change_user",
+        email="force_change@example.com",
+        password=hash_password("123456"),
+        is_active=True,
+        must_change_password=True,
+    )
+    db_session.add(new_user)
+    db_session.commit()
+
+    with mail.record_messages() as out:
+        response = client.post(
+            '/auth/login',
+            json={
+                'email': new_user.email,
+                'password': '123456'
+            }
+        )
+
+        data = response.get_json()
+        assert response.status_code == 200
+        assert data.get("require_password_change") is True
+        assert "access_token" not in data
+        assert "reset_url" not in data  # Không để lộ reset_url trong HTTP body
+        assert "đặt lại mật khẩu" in data.get("message", "")
+
+        # Kiểm tra email thực sự được gửi tới hòm thư cá nhân của user
+        assert len(out) == 1
+        assert out[0].recipients == [new_user.email]
+        assert "/reset-password?token=" in out[0].body
+

@@ -68,3 +68,27 @@ def test_when_reset_password_invalid_token_then_return_401_invalid_token(client,
     assert response.status_code == 401
     data = response.get_json()
     assert data["code"] == "INVALID_TOKEN"
+
+
+def test_when_reset_password_locked_user_then_return_403_account_locked(client, db_session, insert_user, mock_redis):
+    """
+    Kịch bản: Token hợp lệ nhưng tài khoản đang bị khóa (is_active=False).
+    Kết quả: Trả về 403 Forbidden do tài khoản bị khóa.
+    """
+    insert_user.is_active = False
+    db_session.commit()
+
+    mock_redis.get_user_id_by_reset_token.return_value = str(insert_user.user_id)
+
+    response = client.post(
+        "/auth/reset-password",
+        json={
+            "reset_token": "valid_reset_token",
+            "new_password": "NewSecurePassword123",
+            "confirm_password": "NewSecurePassword123"
+        }
+    )
+
+    assert response.status_code == 403
+    data = response.get_json()
+    assert data["code"] == "ACCOUNT_LOCKED"

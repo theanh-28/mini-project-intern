@@ -71,19 +71,54 @@ def cache_response(key_builder, ttl: int = 60):
 
 def require_admin(func):
     """
-    Decorator để check quyền admin cho các request cần quyền admin
+    Decorator để check quyền admin cho các request cần quyền admin (tương thích ngược)
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         payload = g.get("current_user")
-        is_admin = payload.get("is_admin")
-
-        if not is_admin:
+        if not payload:
+            raise AdminAccessRequiredError("Yêu cầu đăng nhập")
+        
+        roles = payload.get("roles", [])
+        if "admin" not in roles:
             raise AdminAccessRequiredError("Yêu cầu quyền Admin")
         
         return func(*args, **kwargs)
     
     return wrapper
+
+
+def require_permission(permission_code: str):
+    """
+    Decorator kiểm tra quyền RBAC của người dùng đối với tài nguyên.
+    Kiểm tra nhanh O(1) qua In-Memory rbac_registry dựa trên danh sách roles trong JWT payload.
+    Tất cả quyền hạn của từng vai trò đều được nạp và đối chiếu chính xác theo dữ liệu DB.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            from app.core.rbac import rbac_registry
+            from app.core.exceptions import PermissionDeniedError, InvalidTokenError
+
+            payload = g.get("current_user")
+            if not payload:
+                raise InvalidTokenError("Chưa xác thực người dùng")
+
+            roles = payload.get("roles", [])
+
+            # Kiểm tra quyền qua In-Memory RBAC Registry
+            if not rbac_registry.has_permission(roles, permission_code):
+                logger.warning(
+                    "Truy cập bị từ chối: user_id=%s, roles=%s thiếu quyền '%s'",
+                    payload.get("sub"),
+                    roles,
+                    permission_code,
+                )
+                raise PermissionDeniedError(f"Bạn không có quyền thực hiện hành động này ({permission_code})")
+
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 def invalidate_cache(key: str):
     """

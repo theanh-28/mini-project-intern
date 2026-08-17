@@ -19,6 +19,7 @@ class ActionEnum(str, enum.Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
+    ASSIGN = "assign"
 
 
 class Permission(Base):

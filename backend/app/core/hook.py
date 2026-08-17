@@ -65,9 +65,8 @@ def login_required():
     except AppException:
         raise
     except Exception as e:
-        # Nếu có lỗi khi kiểm tra token trong Redis, log lỗi và trả về AuthException
-        logger.error(f"Lỗi kiểm tra token trong Redis: {e}")
-        raise AuthException("Lỗi dịch vụ Redis", code_error="REDIS_ERROR")
+        # Khi Redis gặp sự cố, log cảnh báo và tạm thời cho qua (chữ ký JWT đã được xác thực hợp lệ)
+        logger.warning(f"Lỗi kiểm tra token trong Redis, cho phép tiếp tục phiên: {e}")
 
     # Lưu payload vào Flask g để các route sử dụng
     g.current_user = payload

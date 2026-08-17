@@ -17,4 +17,6 @@ def init_mail(app: Flask):
         MAIL_PASSWORD=settings.mail_password,
         MAIL_DEFAULT_SENDER=settings.mail_default_sender,
     )
+    if app.testing or app.config.get("TESTING", False):
+        app.config["MAIL_SUPPRESS_SEND"] = True
     mail.init_app(app)

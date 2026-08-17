@@ -10,6 +10,9 @@ def inserted_user(db_session, user_example):
     Fixture thêm user_example vào DB và trả về object đã được persist.
     Dùng khi test cần một user thực sự tồn tại trong DB trước khi gọi method.
     """
+    from app.models.role import Role
+    db_role = db_session.query(Role).filter(Role.code == "user").first()
+    user_example.roles = [db_role] if db_role else []
     db_session.add(user_example)
     db_session.commit()
     db_session.refresh(user_example)
@@ -28,6 +31,19 @@ def test_get_by_email_success(inserted_user, db_session):
 
     assert user is not None
     assert user == inserted_user
+
+
+def test_get_by_email_with_roles(inserted_user, db_session):
+    """
+    Trường hợp tìm thấy user bằng email kèm eager load roles
+    """
+    user_repo = UserRepository(db=db_session)
+    user = user_repo.get_by_email(inserted_user.email, with_roles=True)
+
+    assert user is not None
+    assert user == inserted_user
+    assert isinstance(user.roles, list)
+
 
 def test_get_by_email_not_found(db_session):
     """
@@ -68,6 +84,19 @@ def test_get_by_id_success(inserted_user, db_session):
     assert user is not None
     assert user.user_id == inserted_user.user_id
     assert user.email == inserted_user.email
+
+
+def test_get_by_id_with_roles(inserted_user, db_session):
+    """
+    Kiểm tra việc lấy user bằng ID kèm eager load roles
+    """
+    user_repo = UserRepository(db=db_session)
+    user = user_repo.get_by_id(inserted_user.user_id, with_roles=True)
+
+    assert user is not None
+    assert user.user_id == inserted_user.user_id
+    assert isinstance(user.roles, list)
+
 
 def test_get_by_id_not_found(db_session):
     """

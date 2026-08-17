@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 import secrets
 
-from app.core.security import verify_password, hash_password
-from app.core.exceptions import EmailNotFoundError, WrongPasswordError, AccountLockedError, InvalidTokenError
+from app.core.security import verify_password, hash_password, create_access_token
+from app.core.rbac import rbac_registry
+from app.core.exceptions import InvalidCredentialsError, AccountLockedError, InvalidTokenError
 from app.core.exceptions import AdminAccessRequiredError, SelfDisableError, SelfRestoreError, PrivilegeViolationError
 from app.core.exceptions import DuplicateEmailError, DuplicateNameError
 from app.core.exceptions import UserNotFoundError
@@ -16,30 +17,59 @@ class UserService:
 
     def auth_user(self, email: str, password: str):
         """
-        Xác thực email + password. Trả về User nếu đúng, None nếu sai.
-        Kiểm tra trạng thái tài khoản hoạt động và cập nhật thời gian đăng nhập cuối.
+        Xác thực email + password. Trả về User nếu đúng, ném ngoại lệ nếu sai.
+        Kiểm tra trạng thái tài khoản hoạt động và không bị xóa mềm.
+        - Nếu must_change_password is True: Tự động sinh reset_token (lưu Redis TTL 15p) và trả về thông báo yêu cầu đổi mật khẩu qua email, KHÔNG cấp access_token.
+        - Nếu must_change_password is False: Cập nhật last_login, tạo access_token, trích xuất roles & permissions và trả về kết quả đăng nhập.
+        Áp dụng chuẩn OWASP chống User Enumeration (dùng chung InvalidCredentialsError).
         """
-        user = self.user_repository.get_by_email(email)
-        if not user:
-            raise EmailNotFoundError("Email không tồn tại")
+        user = self.user_repository.get_by_email(email, with_roles=True)
+        if not user or user.deleted_at is not None:
+            raise InvalidCredentialsError()
         
         if not verify_password(password, user.password):
-            raise WrongPasswordError("Mật khẩu không đúng")
+            raise InvalidCredentialsError()
         
         if not user.is_active:
             raise AccountLockedError("Tài khoản đang bị khóa")
             
+        if user.must_change_password:
+            reset_token = secrets.token_urlsafe(32)
+            self.redis_service.save_reset_token(
+                reset_token=reset_token,
+                user_id=user.user_id,
+                ttl=settings.reset_token_expire_second,
+            )
+            reset_url = build_reset_password_url(reset_token=reset_token)
+            return {
+                "require_password_change": True,
+                "message": "Tài khoản yêu cầu đổi mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
+                "reset_url": reset_url,
+                "user": user,
+            }
+
         self.user_repository.update_last_login(user)
-        return user
+
+        user_roles = [r.code for r in user.roles] or ["user"]
+        user_permissions = list(rbac_registry.get_permissions_for_roles(user_roles))
+        access_token = create_access_token(user_id=user.user_id, roles=user_roles)
+
+        return {
+            "require_password_change": False,
+            "user": user,
+            "roles": user_roles,
+            "permissions": user_permissions,
+            "access_token": access_token,
+        }
     
     def forgot_password_user(self, email: str):
         """
         Kiểm tra email có tồn tại không
-        Trả về reset_url nếu tồn tại, None nếu không (có trường hợp is_active đang là False)
+        Trả về reset_url nếu tồn tại, None nếu không (kể cả trường hợp is_active đang là False hoặc đã bị xóa mềm)
         """
-        user =  self.user_repository.get_by_email(email=email)
+        user = self.user_repository.get_by_email(email=email)
 
-        if not user or not user.is_active:
+        if not user or not user.is_active or user.deleted_at is not None:
             return None
 
         # Tạo reset token 
@@ -63,9 +93,12 @@ class UserService:
         if not user_id:
             raise InvalidTokenError("Token đã hết hiệu lực hoặc không tồn tại token này")
 
-        user = self.user_repository.get_by_id(id=user_id)
-        if not user or not user.is_active:
+        user = self.user_repository.get_by_id(int(user_id))
+        if not user or user.deleted_at is not None:
             raise UserNotFoundError("Tài khoản không tồn tại")
+
+        if not user.is_active:
+            raise AccountLockedError("Tài khoản đang bị khóa, không thể đặt lại mật khẩu")
 
         return user
 
