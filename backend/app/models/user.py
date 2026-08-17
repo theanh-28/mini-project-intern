@@ -20,6 +20,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Định nghĩa các trường loại trừ hoàn toàn khỏi audit log
     __audit_exclude__ = {"last_login", "updated_at"}

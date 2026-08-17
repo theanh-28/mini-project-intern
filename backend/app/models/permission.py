@@ -19,7 +19,6 @@ class ActionEnum(str, enum.Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
-    MANAGE = "manage"
 
 
 class Permission(Base):
