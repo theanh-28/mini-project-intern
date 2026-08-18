@@ -23,4 +23,4 @@ def test_user_when_create_is_correct_return_true(db_session, name, email, passwo
     assert user.name == name
     assert user.email == email
     assert user.is_active is True
-    assert user.is_admin is False
+    assert user.must_change_password is False

@@ -4,7 +4,6 @@ from flask import Blueprint, request, jsonify, g, render_template
 from flask_mail import Message
 
 from app.schemas.auth import LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest, UserInfo
-from app.core.security import create_access_token
 from app.services.user_service import get_user_service
 from app.core.exceptions import AuthException
 from app.core.config import settings
@@ -20,22 +19,43 @@ def login():
     user_service = get_user_service()
     
     try:
-        user = user_service.auth_user(data.email, data.password)
+        auth_result = user_service.auth_user(data.email, data.password)
     except AuthException as e:
         logger.error("Authentication failed: %s", e.message)
         return jsonify({"error": e.message, "code": e.code_error}), e.status_code
 
-    access_token = create_access_token(user.user_id, user.is_admin)
-    logger.info("User logged in: id=%s, is_admin=%s", user.user_id, user.is_admin)
+    # Nếu bắt buộc đổi mật khẩu lần đầu: không cấp JWT, gửi email chứa link đổi mật khẩu và trả về thông báo
+    if auth_result.get("require_password_change"):
+        reset_url = auth_result.get("reset_url")
+        if reset_url:
+            msg = Message(
+                subject="Yêu cầu đổi mật khẩu",
+                recipients=[data.email],
+                body=render_template("emails/reset_password.txt", reset_url=reset_url),
+                html=render_template("emails/reset_password.html", reset_url=reset_url),
+            )
+            mail.send(msg)
 
-    response_data = LoginResponse(access_token=access_token,
-                                  user=UserInfo(
-                                      user_id=user.user_id,
-                                      name=user.name,
-                                      email=user.email,
-                                      is_admin=user.is_admin
-                                  ))
-    return jsonify(response_data.model_dump()), 200
+        return jsonify({
+            "message": auth_result["message"],
+            "require_password_change": True,
+        }), 200
+
+    user = auth_result["user"]
+    logger.info("User logged in: id=%s, roles=%s", user.user_id, auth_result["roles"])
+
+    response_data = LoginResponse(
+        access_token=auth_result["access_token"],
+        user=UserInfo(
+            user_id=user.user_id,
+            name=user.name,
+            email=user.email,
+            must_change_password=False,
+            roles=auth_result["roles"],
+            permissions=auth_result["permissions"],
+        )
+    )
+    return jsonify(response_data.model_dump(mode="json")), 200
 
 
 @auth_bp.route('/auth/logout', methods=['POST'])

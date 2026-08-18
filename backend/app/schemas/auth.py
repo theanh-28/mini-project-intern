@@ -2,6 +2,8 @@
 Dùng pydantic để xác thực dữ liệu 
 """
 
+from typing import List, Optional
+from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
 
 class LoginRequest(BaseModel):
@@ -14,7 +16,9 @@ class UserInfo(BaseModel):
     user_id: int
     name: str
     email: EmailStr
-    is_admin: bool
+    must_change_password: bool = False
+    roles: List[str] = []
+    permissions: List[str] = []
 
 class LoginResponse(BaseModel):
     access_token: str

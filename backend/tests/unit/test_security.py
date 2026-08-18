@@ -22,7 +22,7 @@ def test_create_access_token_expires_1h(user_example):
     Kiểm tra expiry 1h
     """
     with freeze_time("2026-01-01 00:00:00"):
-        token = create_access_token(user_example.user_id, user_example.is_admin)
+        token = create_access_token(user_example.user_id, roles=["user"])
         payload = decode_access_token(token)
     
     exp = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
@@ -54,7 +54,7 @@ def test_decode_expired_token_raises(user_example):
     Kiểm tra token hết hạn raise ExpiredSignatureError
     """
     with freeze_time("2026-01-01 00:00:00"):
-        token = create_access_token(user_example.user_id, user_example.is_admin)
+        token = create_access_token(user_example.user_id, roles=["user"])
 
     with freeze_time("2026-01-01 02:00:00"):
         with pytest.raises(ExpiredSignatureError):
@@ -82,10 +82,24 @@ def test_decode_token_missing_sub_raises():
     from app.core.config import settings
     payload_no_sub = {
         "jti": "some-jti",
-        "is_admin": False,
+        "roles": ["user"],
         "exp": 9999999999
     }
     token = jwt.encode(payload_no_sub, settings.secret_key, algorithm=settings.algorithm)
+    with pytest.raises(JWTError):
+        decode_access_token(token)
+
+def test_decode_token_missing_roles_raises():
+    """
+    Kiểm tra token thiếu claim 'roles' raise JWTError
+    """
+    from app.core.config import settings
+    payload_no_roles = {
+        "jti": "some-jti",
+        "sub": "1",
+        "exp": 9999999999
+    }
+    token = jwt.encode(payload_no_roles, settings.secret_key, algorithm=settings.algorithm)
     with pytest.raises(JWTError):
         decode_access_token(token)
 

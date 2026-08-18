@@ -44,7 +44,7 @@ def test_restore_user_when_non_admin_return_403(client, access_token):
     )
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
 
 # ====== Test Restore User API Success & Business Rules ======
@@ -79,7 +79,7 @@ def test_restore_user_other_admin_return_403(client, admin_token, insert_admins)
     """
     Admin khôi phục tài khoản của một Admin khác → 403 (PRIVILEGE_VIOLATION)
     """
-    admin_target = insert_admins[0] # user_id=16, is_admin=True
+    admin_target = insert_admins[0] # user_id=16, role="admin"
     response = client.post(
         f"/admin/users/{admin_target.user_id}/restore",
         headers={"Authorization": f"Bearer {admin_token}"}

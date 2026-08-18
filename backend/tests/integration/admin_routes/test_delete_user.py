@@ -44,7 +44,7 @@ def test_delete_user_when_non_admin_return_403(client, access_token):
     )
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
 
 # ====== Test Delete User API Success & Business Rules ======
@@ -53,7 +53,7 @@ def test_delete_user_success_return_204(client, admin_token, insert_users):
     """
     Admin xóa mềm user thường thành công → 204 No Content
     """
-    user_target = insert_users[2] # user_3 (is_admin=False)
+    user_target = insert_users[2] # user_3 (role="user")
     response = client.delete(
         f"/admin/users/{user_target.user_id}",
         headers={"Authorization": f"Bearer {admin_token}"}
@@ -79,7 +79,7 @@ def test_delete_user_other_admin_return_403(client, admin_token, insert_admins):
     """
     Admin xóa tài khoản của một Admin khác → 403 (PRIVILEGE_VIOLATION)
     """
-    admin_target = insert_admins[0] # user_id=16, is_admin=True
+    admin_target = insert_admins[0] # user_id=16, role="admin"
     response = client.delete(
         f"/admin/users/{admin_target.user_id}",
         headers={"Authorization": f"Bearer {admin_token}"}

@@ -121,6 +121,7 @@ def upgrade() -> None:
             ('Create Role', 'roles', 'create', 'Create new roles'),
             ('Update Role', 'roles', 'update', 'Update role details and permissions'),
             ('Delete Role', 'roles', 'delete', 'Delete custom roles'),
+            ('Assign Roles to User', 'roles', 'assign', 'Assign or revoke roles from users'),
             ('Read Permissions', 'permissions', 'read', 'View system permissions list'),
             ('Read Audit Logs', 'audit_logs', 'read', 'View system audit logs');
     """)

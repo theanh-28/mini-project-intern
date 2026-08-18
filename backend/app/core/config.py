@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     # --- reset password ---
     reset_token_expire_second: int
+    admin_reset_token_expire_second: int = 86400  # Mặc định 24 giờ cho link do admin tạo
     frontend_url: str
 
     # --- smtp server ---

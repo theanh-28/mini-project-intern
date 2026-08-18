@@ -10,6 +10,9 @@ def inserted_user(db_session, user_example):
     Fixture thêm user_example vào DB và trả về object đã được persist.
     Dùng khi test cần một user thực sự tồn tại trong DB trước khi gọi method.
     """
+    from app.models.role import Role
+    db_role = db_session.query(Role).filter(Role.code == "user").first()
+    user_example.roles = [db_role] if db_role else []
     db_session.add(user_example)
     db_session.commit()
     db_session.refresh(user_example)
@@ -28,6 +31,19 @@ def test_get_by_email_success(inserted_user, db_session):
 
     assert user is not None
     assert user == inserted_user
+
+
+def test_get_by_email_with_roles(inserted_user, db_session):
+    """
+    Trường hợp tìm thấy user bằng email kèm eager load roles
+    """
+    user_repo = UserRepository(db=db_session)
+    user = user_repo.get_by_email(inserted_user.email, with_roles=True)
+
+    assert user is not None
+    assert user == inserted_user
+    assert isinstance(user.roles, list)
+
 
 def test_get_by_email_not_found(db_session):
     """
@@ -68,6 +84,19 @@ def test_get_by_id_success(inserted_user, db_session):
     assert user is not None
     assert user.user_id == inserted_user.user_id
     assert user.email == inserted_user.email
+
+
+def test_get_by_id_with_roles(inserted_user, db_session):
+    """
+    Kiểm tra việc lấy user bằng ID kèm eager load roles
+    """
+    user_repo = UserRepository(db=db_session)
+    user = user_repo.get_by_id(inserted_user.user_id, with_roles=True)
+
+    assert user is not None
+    assert user.user_id == inserted_user.user_id
+    assert isinstance(user.roles, list)
+
 
 def test_get_by_id_not_found(db_session):
     """
@@ -125,7 +154,7 @@ def test_create_stores_correct_fields(db_session):
 
 def test_create_sets_default_flags(db_session):
     """
-    Tạo user mới => is_admin=False và is_active=True theo mặc định
+    Tạo user mới => must_change_password=False và is_active=True theo mặc định
     """
     user_repo = UserRepository(db=db_session)
 
@@ -135,7 +164,7 @@ def test_create_sets_default_flags(db_session):
         password="hashed_password_value"
     )
 
-    assert new_user.is_admin is False
+    assert new_user.must_change_password is True
     assert new_user.is_active is True
 
 
@@ -190,7 +219,7 @@ def test_get_page_with_count(inserted_user, db_session):
 
 def test_get_page_with_count_with_filters(inserted_user, db_session):
     """
-    Lọc người dùng theo is_active, is_admin và created_at trong repository
+    Lọc người dùng theo is_active, role và created_at trong repository
     """
     from datetime import timedelta
 
@@ -201,10 +230,14 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
     assert total == 1
     assert len(items) == 1
 
-    # 2. Khớp điều kiện is_admin
-    items_admin, total_admin = user_repo.get_page_with_count(page=1, limit=10, filters={"is_admin": False})
-    assert total_admin == 1
-    assert len(items_admin) == 1
+    # 2. Khớp điều kiện role (string hoặc list)
+    items_role, total_role = user_repo.get_page_with_count(page=1, limit=10, filters={"role": "user"})
+    assert total_role == 1
+    assert len(items_role) == 1
+
+    items_roles_list, total_roles_list = user_repo.get_page_with_count(page=1, limit=10, filters={"role": ["user", "admin"]})
+    assert total_roles_list == 1
+    assert len(items_roles_list) == 1
 
     # 3. Khớp điều kiện created_at range
     start_time = inserted_user.created_at - timedelta(seconds=1)
@@ -214,10 +247,16 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
         limit=10,
         filters={"created_at_from": start_time, "created_at_to": end_time}
     )
-    assert total_range == 1
-    assert len(items_range) == 1
+    # 4. Khớp điều kiện search (tìm theo name hoặc email)
+    items_search_name, total_search_name = user_repo.get_page_with_count(page=1, limit=10, filters={"search": "user_1"})
+    assert total_search_name == 1
+    assert len(items_search_name) == 1
 
-    # 4. Không khớp điều kiện
+    items_search_email, total_search_email = user_repo.get_page_with_count(page=1, limit=10, filters={"search": "example.com"})
+    assert total_search_email == 1
+    assert len(items_search_email) == 1
+
+    # 5. Không khớp điều kiện
     items_none, total_none = user_repo.get_page_with_count(page=1, limit=10, filters={"is_active": False})
     assert total_none == 0
     assert len(items_none) == 0
@@ -227,28 +266,68 @@ def test_get_page_with_count_with_filters(inserted_user, db_session):
 
 def test_update_success(inserted_user, db_session):
     """
-    Cập nhật thành công các thông tin name, email, is_active của user và lưu vào database
+    Cập nhật thành công các thông tin name, email của user và lưu vào database
     """
     user_repo = UserRepository(db=db_session)
 
-    # Thực hiện gọi hàm update
+    # Thực hiện gọi hàm update_profile
     updated_user = user_repo.update_profile(
         user=inserted_user,
         name="updated_name",
-        email="updated_email@example.com",
-        is_active=False
+        email="updated_email@example.com"
     )
 
-    # 1. Kiểm tra đối tượng trả về từ hàm update
+    # 1. Kiểm tra đối tượng trả về từ hàm update_profile
     assert updated_user.name == "updated_name"
     assert updated_user.email == "updated_email@example.com"
-    assert updated_user.is_active is False
 
     # 2. Truy vấn lại từ database để đảm bảo dữ liệu thực sự đã được persist
     db_session.refresh(inserted_user)
     assert inserted_user.name == "updated_name"
     assert inserted_user.email == "updated_email@example.com"
+
+
+# ======    TEST HÀM UPDATE_STATUS     ======
+
+def test_update_status_success(inserted_user, db_session):
+    """
+    Cập nhật trạng thái is_active của user
+    """
+    user_repo = UserRepository(db=db_session)
+
+    updated_user = user_repo.update_status(user=inserted_user, is_active=False)
+
+    assert updated_user.is_active is False
+    db_session.refresh(inserted_user)
     assert inserted_user.is_active is False
+
+
+# ======    TEST HÀM SOFT_DELETE & RESTORE     ======
+
+def test_soft_delete_and_restore_success(inserted_user, db_session):
+    """
+    Xóa mềm (gán deleted_at) và khôi phục (gán deleted_at=None)
+    """
+    user_repo = UserRepository(db=db_session)
+
+    # 1. Xóa mềm
+    user_repo.soft_delete(user=inserted_user)
+    db_session.refresh(inserted_user)
+    assert inserted_user.deleted_at is not None
+
+    # Danh sách get_page_with_count không còn chứa user này
+    items, total = user_repo.get_page_with_count()
+    assert total == 0
+    assert len(items) == 0
+
+    # 2. Khôi phục
+    user_repo.restore(user=inserted_user)
+    db_session.refresh(inserted_user)
+    assert inserted_user.deleted_at is None
+
+    items, total = user_repo.get_page_with_count()
+    assert total == 1
+    assert len(items) == 1
 
 
 # ======    TEST HÀM UPDATE_PASSWORD     ======

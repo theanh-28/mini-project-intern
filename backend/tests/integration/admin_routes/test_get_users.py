@@ -49,7 +49,7 @@ def test_get_users_when_non_admin_return_403(client, access_token, insert_users)
     )
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
 
 def test_get_users_when_admin_return_200(client, admin_token, insert_users):
@@ -279,37 +279,54 @@ def test_get_users_when_non_admin_and_cache_exists_return_403(client, access_tok
     
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
     mock_redis.get.assert_not_called()
 
 
+def test_get_users_when_admin_return_200(client, admin_token, insert_users):
+    """
+    Admin token hợp lệ → 200
+    """
+    response = client.get(
+        "/admin/users",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "users" in data
+    assert data["total"] == 15
+
+
 # ====== Test Query Filtering ======
 
-def test_get_users_filter_by_is_admin(client, admin_token, admin_example, db_session, insert_users, mock_redis):
+def test_get_users_filter_by_role(client, admin_token, admin_example, db_session, insert_users, mock_redis):
     """
-    Lọc danh sách theo quyền admin (is_admin)
+    Lọc danh sách theo vai trò (role: user / admin)
     """
+    from app.models.role import Role
     mock_redis.get.return_value = None
 
-    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
+    # Đưa admin_example vào DB kèm role admin
+    db_role = db_session.query(Role).filter(Role.code == "admin").first()
+    admin_example.roles = [db_role] if db_role else []
     db_session.add(admin_example)
     db_session.commit()
 
-    # Lọc các user KHÔNG phải admin -> Phải trả về 15 user thường
+    # Lọc các user có role 'user' -> Phải trả về 15 user thường
     response_non_admin = client.get(
         "/admin/users",
-        query_string={"is_admin": "false"},
+        query_string={"role": "user"},
         headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response_non_admin.status_code == 200
     data_non_admin = response_non_admin.get_json()
     assert data_non_admin["total"] == 15
 
-    # Lọc các user LÀ admin -> Trả về 1 (chính là tài khoản admin đang gọi API)
+    # Lọc các user có role 'admin' -> Trả về 1 (chính là tài khoản admin đang gọi API)
     response_admin = client.get(
         "/admin/users",
-        query_string={"is_admin": "true"},
+        query_string={"role": "admin"},
         headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response_admin.status_code == 200
@@ -373,5 +390,91 @@ def test_get_users_filter_by_is_active(client, admin_token, db_session, insert_u
     assert response_active.status_code == 200
     data_active = response_active.get_json()
     assert data_active["total"] == 14
+
+
+def test_get_users_excludes_soft_deleted_users(client, admin_token, db_session, insert_users, mock_redis):
+    """
+    Tài khoản bị xóa mềm (deleted_at IS NOT NULL) tuyệt đối không xuất hiện trong danh sách get_users
+    """
+    from datetime import datetime, timezone
+    mock_redis.get.return_value = None
+
+    # Xóa mềm user_1 (user_id = 1)
+    db_session.query(User).filter_by(user_id=1).update({"deleted_at": datetime.now(timezone.utc)})
+    db_session.commit()
+
+    response = client.get(
+        "/admin/users",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    # Tổng ban đầu là 15, sau khi xóa mềm 1 user còn 14
+    assert data["total"] == 14
+    user_ids = [u["user_id"] for u in data["users"]]
+    assert 1 not in user_ids
+
+
+
+
+def test_get_users_filter_by_multiple_roles(client, admin_token, insert_users, insert_admins, mock_redis):
+    """
+    Lọc danh sách theo nhiều roles theo chuẩn query params lặp (?role=user&role=admin)
+    """
+    mock_redis.get.return_value = None
+
+    # Lọc role=user&role=admin (15 users + 5 admins = 20 users)
+    response = client.get(
+        "/admin/users",
+        query_string=[("role", "user"), ("role", "admin"), ("per_page", "50")],
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["total"] == 20
+
+
+def test_get_users_filter_by_repeated_role_query_params(client, admin_token, insert_users, insert_admins, mock_redis):
+    """
+    Lọc danh sách theo contract GET /admin/users?role=user&role=admin (lặp lại query parameter)
+    """
+    mock_redis.get.return_value = None
+
+    # Gửi URL có query lặp: ?role=user&role=admin
+    response = client.get(
+        "/admin/users?role=user&role=admin&per_page=50",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["total"] == 20
+
+
+def test_get_users_filter_by_search_param(client, admin_token, insert_users, mock_redis):
+    """
+    Lọc danh sách theo search tổng hợp (?search=...) khớp cả name lẫn email
+    """
+    mock_redis.get.return_value = None
+
+    # 1. Tìm theo name (user_3)
+    response_name = client.get(
+        "/admin/users?search=user_3",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response_name.status_code == 200
+    data_name = response_name.get_json()
+    assert data_name["total"] == 1
+    assert data_name["users"][0]["name"] == "user_3"
+
+    # 2. Tìm theo email (user_2@)
+    response_email = client.get(
+        "/admin/users?search=user_2@",
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response_email.status_code == 200
+    data_email = response_email.get_json()
+    assert data_email["total"] == 1
+    assert data_email["users"][0]["email"] == "user_2@example.com"
+
 
 

@@ -3,8 +3,6 @@ import json
 import logging
 from flask import request, make_response, g
 
-from app.core.exceptions import AdminAccessRequiredError
-
 logger = logging.getLogger(__name__)
 
 
@@ -69,21 +67,37 @@ def cache_response(key_builder, ttl: int = 60):
     return decorator
 
 
-def require_admin(func):
+def require_permission(permission_code: str):
     """
-    Decorator để check quyền admin cho các request cần quyền admin
+    Decorator kiểm tra quyền RBAC của người dùng đối với tài nguyên.
+    Kiểm tra nhanh O(1) qua In-Memory rbac_registry dựa trên danh sách roles trong JWT payload.
+    Tất cả quyền hạn của từng vai trò đều được nạp và đối chiếu chính xác theo dữ liệu DB.
     """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        payload = g.get("current_user")
-        is_admin = payload.get("is_admin")
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            from app.core.rbac import rbac_registry
+            from app.core.exceptions import PermissionDeniedError, InvalidTokenError
 
-        if not is_admin:
-            raise AdminAccessRequiredError("Yêu cầu quyền Admin")
-        
-        return func(*args, **kwargs)
-    
-    return wrapper
+            payload = g.get("current_user")
+            if not payload:
+                raise InvalidTokenError("Chưa xác thực người dùng")
+
+            roles = payload.get("roles", [])
+
+            # Kiểm tra quyền qua In-Memory RBAC Registry
+            if not rbac_registry.has_permission(roles, permission_code):
+                logger.warning(
+                    "Truy cập bị từ chối: user_id=%s, roles=%s thiếu quyền '%s'",
+                    payload.get("sub"),
+                    roles,
+                    permission_code,
+                )
+                raise PermissionDeniedError(f"Bạn không có quyền thực hiện hành động này")
+
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 def invalidate_cache(key: str):
     """

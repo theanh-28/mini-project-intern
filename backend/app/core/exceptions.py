@@ -57,16 +57,10 @@ class ConflictException(AppException):
 # Concrete exceptions
 # ---------------------------------------------------------------------------
 
-class EmailNotFoundError(AuthException):
-    """Ngoại lệ khi email không tồn tại"""
-    def __init__(self, message: str = "Email không tồn tại"):
-        super().__init__(message, status_code=404, code_error="EMAIL_NOT_FOUND")
-
-
-class WrongPasswordError(AuthException):
-    """Ngoại lệ khi mật khẩu không đúng"""
-    def __init__(self, message: str = "Mật khẩu không đúng"):
-        super().__init__(message, status_code=401, code_error="WRONG_PASSWORD")
+class InvalidCredentialsError(AuthException):
+    """Ngoại lệ khi thông tin đăng nhập không chính xác (tránh user enumeration)"""
+    def __init__(self, message: str = "Email hoặc mật khẩu không chính xác"):
+        super().__init__(message, status_code=401, code_error="INVALID_CREDENTIALS")
 
 
 class AccountLockedError(AuthException):
@@ -137,6 +131,12 @@ class SelfRestoreError(PermissionException):
 
 
 class PrivilegeViolationError(PermissionException):
-    """Ngoại lệ khi thục hiện hành động vượt quá cấp bậc quyền hạn"""
+    """Ngoại lệ khi thực hiện hành động vượt quá cấp bậc quyền hạn"""
     def __init__(self, message: str = "Không có quyền thực hiện thao tác này"):
         super().__init__(message, status_code=403, code_error="PRIVILEGE_VIOLATION")
+
+
+class PermissionDeniedError(PermissionException):
+    """Ngoại lệ khi user không có quyền (permission) truy cập tài nguyên"""
+    def __init__(self, message: str = "Bạn không có quyền thực hiện hành động này"):
+        super().__init__(message, status_code=403, code_error="PERMISSION_DENIED")

@@ -44,7 +44,7 @@ def test_when_non_admin_return_403(client, access_token):
     )
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
 
 # ====== Test Create User Success  ======
