@@ -2,9 +2,10 @@ import pytest
 
 from app.models import User
 from app.core.security import hash_password
-
-
 from app.models.role import Role
+
+# Tính toán băm mật khẩu 1 lần duy nhất thay vì băm 15-20 lần ở mỗi test case
+DEFAULT_TEST_PASSWORD_HASH = hash_password("123456")
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def insert_users(db_session):
             user_id=i,
             name=f"user_{i}",
             email=f"user_{i}@example.com",
-            password=hash_password("123456"),
+            password=DEFAULT_TEST_PASSWORD_HASH,
             is_active=True,
         )
         if user_role:
@@ -42,7 +43,7 @@ def insert_admins(db_session):
             user_id=i,
             name=f"admin_{i}",
             email=f"admin_{i}@example.com",
-            password=hash_password("123456"),
+            password=DEFAULT_TEST_PASSWORD_HASH,
             is_active=True,
         )
         if admin_role:

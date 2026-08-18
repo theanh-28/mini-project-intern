@@ -1,3 +1,4 @@
+import json
 import logging
 
 from flask import request, g
@@ -26,13 +27,42 @@ PUBLIC_ENDPOINTS = [
 
 def login_required():
     """
-    before_request hook để xác thực JWT trước mỗi request.
-    Bỏ qua các endpoint công khai trong PUBLIC_ENDPOINTS.
+    before_request hook để xác thực người dùng trước mỗi request:
+    1. Bỏ qua các endpoint công khai trong PUBLIC_ENDPOINTS và request preflight OPTIONS.
+    2. Ưu tiên: Khi chạy qua Kong API Gateway, đọc trực tiếp định danh đã xác thực từ Headers (x-user-id, x-user-roles).
+    3. Dự phòng: Khi chạy độc lập (Standalone/Pytest), tự giải mã JWT và kiểm tra Redis.
     """
-    from app.services.redis_service import redis_service
-    
+    if request.method == "OPTIONS":
+        return
+
     if request.endpoint in PUBLIC_ENDPOINTS:
         return
+
+    # --- 1. Nhận diện người dùng từ Kong API Gateway (Đã qua xác thực ở Gateway) ---
+    user_id = request.headers.get("x-user-id")
+    if user_id:
+        roles_header = request.headers.get("x-user-roles")
+        token_jti = request.headers.get("x-token-jti")
+        token_exp = request.headers.get("x-token-exp")
+
+        roles = []
+        if roles_header:
+            try:
+                roles = json.loads(roles_header) if roles_header.startswith("[") else [r.strip() for r in roles_header.split(",")]
+            except Exception:
+                roles = [roles_header]
+
+        g.current_user = {
+            "sub": str(user_id),
+            "roles": roles if isinstance(roles, list) else [roles],
+            "jti": token_jti,
+            "exp": int(token_exp) if token_exp else None,
+        }
+        return
+
+    
+    # --- 2. Xác thực JWT trực tiếp tại Backend (Khi chạy test hoặc không qua Gateway) ---
+    from app.services.redis_service import redis_service
 
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -70,4 +100,4 @@ def login_required():
 
     # Lưu payload vào Flask g để các route sử dụng
     g.current_user = payload
-
+    

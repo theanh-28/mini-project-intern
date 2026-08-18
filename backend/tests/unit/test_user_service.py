@@ -142,24 +142,14 @@ def test_logout_user_success(make_user_service):
 
 # ======    TEST HÀM GET_LIST_USER  ======
 
-def test_get_list_user_when_non_admin_raise_admin_access_required_error(make_user_service):
+def test_get_list_user_return_users_and_total(make_user_service, user_example):
     """
-    User thường (is_admin=False) => AdminAccessRequiredError
-    """
-    from app.core.exceptions import AdminAccessRequiredError
-    user_service = make_user_service()
-    with pytest.raises(AdminAccessRequiredError):
-        user_service.get_list_user(is_admin=False, page=1, per_page=20)
-
-
-def test_get_list_user_when_admin_return_users_and_total(make_user_service, user_example):
-    """
-    Admin (is_admin=True) => trả về tuple (users, total) từ repository
+    Lấy danh sách người dùng => trả về tuple (users, total) từ repository
     """
     users = [user_example]
     user_service = make_user_service(get_page_with_count=(users, 1))
 
-    result_users, result_total = user_service.get_list_user(is_admin=True, page=1, per_page=20)
+    result_users, result_total = user_service.get_list_user(page=1, per_page=20)
 
     assert result_users == users
     assert result_total == 1
@@ -171,7 +161,7 @@ def test_get_list_user_calls_repository_with_correct_params(make_user_service):
     """
     user_service = make_user_service(get_page_with_count=([], 5))
 
-    user_service.get_list_user(is_admin=True, page=2, per_page=10)
+    user_service.get_list_user(page=2, per_page=10)
 
     user_service.user_repository.get_page_with_count.assert_called_once_with(2, 10, filters=None)
 
@@ -244,7 +234,7 @@ def test_update_user_success(make_user_service, user_example):
     """
     Cập nhật thông tin user thành công
     """
-    user_example.is_admin = False  # Đảm bảo không dính check admin khác
+    user_example.roles = []  # Đảm bảo không dính check admin khác
     user_service = make_user_service(
         get_by_id=user_example,
         get_by_email=None,
@@ -257,7 +247,6 @@ def test_update_user_success(make_user_service, user_example):
         user_id=user_example.user_id,
         name="new_name",
         email="new_email@example.com",
-        is_active=True
     )
 
     assert result == user_example
@@ -265,26 +254,7 @@ def test_update_user_success(make_user_service, user_example):
         user=user_example,
         name="new_name",
         email="new_email@example.com",
-        is_active=True
     )
-
-def test_update_user_self_disable_raise_self_disable_error(make_user_service, user_example):
-    """
-    Admin tự khóa chính mình (user_id == actor_id và is_active=False) => SelfDisableError
-    """
-    from app.core.exceptions import SelfDisableError
-    user_service = make_user_service()
-
-    with pytest.raises(SelfDisableError) as excinfo:
-        user_service.update_user(
-            actor_id=user_example.user_id, # actor_id trùng user_id
-            user_id=user_example.user_id,
-            name="new_name",
-            email="new_email@example.com",
-            is_active=False  # Khóa tài khoản
-        )
-
-    user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_not_found_raise_user_not_found_error(make_user_service):
     """
@@ -299,17 +269,17 @@ def test_update_user_when_not_found_raise_user_not_found_error(make_user_service
             user_id=9999,
             name="new_name",
             email="new_email@example.com",
-            is_active=True
         )
 
     user_service.user_repository.update_profile.assert_not_called()
 
 def test_update_user_when_target_is_admin_raise_privilege_violation_error(make_user_service, user_example):
     """
-    Cố gắng sửa đổi Admin khác (user.is_admin=True và user_id != actor_id) => PrivilegeViolationError
+    Cố gắng sửa đổi Admin khác (target có role admin và user_id != actor_id) => PrivilegeViolationError
     """
     from app.core.exceptions import PrivilegeViolationError
-    user_example.is_admin = True # Đối tượng bị sửa là admin
+    from app.models.role import Role
+    user_example.roles = [Role(name="Administrator", code="admin", is_system=True)] # Đối tượng bị sửa là admin
     user_service = make_user_service(get_by_id=user_example)
 
     with pytest.raises(PrivilegeViolationError) as excinfo:
@@ -318,7 +288,6 @@ def test_update_user_when_target_is_admin_raise_privilege_violation_error(make_u
             user_id=user_example.user_id,
             name="new_name",
             email="new_email@example.com",
-            is_active=True
         )
 
     user_service.user_repository.update_profile.assert_not_called()
@@ -343,7 +312,6 @@ def test_update_user_when_email_exists_raise_duplicate_email_error(make_user_ser
             user_id=user_example.user_id,
             name=user_example.name,
             email="taken@example.com", # Email bị trùng
-            is_active=True
         )
 
     user_service.user_repository.update_profile.assert_not_called()
@@ -368,7 +336,6 @@ def test_update_user_when_name_exists_raise_duplicate_name_error(make_user_servi
             user_id=user_example.user_id,
             name="taken_name", # Tên bị trùng
             email=user_example.email,
-            is_active=True
         )
 
     user_service.user_repository.update_profile.assert_not_called()
@@ -392,7 +359,6 @@ def test_update_user_same_user_different_case_email_success(make_user_service, u
         user_id=user_example.user_id,
         name=user_example.name,
         email="User_1@Example.com",
-        is_active=True
     )
 
     assert result == user_example
@@ -400,7 +366,6 @@ def test_update_user_same_user_different_case_email_success(make_user_service, u
         user=user_example,
         name=user_example.name,
         email="User_1@Example.com",
-        is_active=True
     )
 
 
@@ -422,7 +387,6 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
         user_id=user_example.user_id,
         name="User_1",
         email=user_example.email,
-        is_active=True
     )
 
     assert result == user_example
@@ -430,32 +394,100 @@ def test_update_user_same_user_different_case_name_success(make_user_service, us
         user=user_example,
         name="User_1",
         email=user_example.email,
-        is_active=True
     )
 
 
-def test_update_user_to_inactive_calls_redis_revoke(make_user_service, user_example):
+# ====== TEST HÀM UPDATE_USER_STATUS ======
+
+def test_update_user_status_success(make_user_service, user_example):
+    """
+    Admin cập nhật trạng thái hoạt động của user thành công (từ False sang True)
+    """
+    user_example.is_active = False
+    user_service = make_user_service(
+        get_by_id=user_example,
+        update_status=user_example
+    )
+
+    result = user_service.update_user_status(
+        actor_id=999,
+        user_id=user_example.user_id,
+        is_active=True
+    )
+
+    assert result == user_example
+    user_service.user_repository.update_status.assert_called_once_with(
+        user=user_example,
+        is_active=True
+    )
+
+def test_update_user_status_unchanged_does_not_call_db_or_redis(make_user_service, user_example):
+    """
+    Khi is_active không đổi (ví dụ đang True gửi tiếp True), trả về user ngay, không gọi update_status hay redis_service.
+    """
+    user_example.is_active = True
+    user_service = make_user_service(get_by_id=user_example)
+
+    result = user_service.update_user_status(
+        actor_id=999,
+        user_id=user_example.user_id,
+        is_active=True
+    )
+
+    assert result == user_example
+    user_service.user_repository.update_status.assert_not_called()
+    user_service.redis_service.revoke_user_sessions.assert_not_called()
+
+def test_update_user_status_self_disable_raise_self_disable_error(make_user_service, user_example):
+    """
+    Admin tự khóa chính mình (user_id == actor_id và is_active=False) => SelfDisableError
+    """
+    from app.core.exceptions import SelfDisableError
+    user_service = make_user_service()
+
+    with pytest.raises(SelfDisableError):
+        user_service.update_user_status(
+            actor_id=user_example.user_id,
+            user_id=user_example.user_id,
+            is_active=False
+        )
+
+    user_service.user_repository.update_status.assert_not_called()
+
+def test_update_user_status_when_target_is_admin_raise_privilege_violation_error(make_user_service, user_example):
+    """
+    Cố gắng đổi trạng thái Admin khác => PrivilegeViolationError
+    """
+    from app.core.exceptions import PrivilegeViolationError
+    from app.models.role import Role
+    user_example.roles = [Role(name="Administrator", code="admin", is_system=True)]
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(PrivilegeViolationError):
+        user_service.update_user_status(
+            actor_id=999,
+            user_id=user_example.user_id,
+            is_active=False
+        )
+
+    user_service.user_repository.update_status.assert_not_called()
+
+def test_update_user_status_to_inactive_calls_redis_revoke(make_user_service, user_example):
     """
     Khi thay đổi trạng thái user từ active (True) sang inactive (False) -> gọi revoke_user_sessions
     """
     user_example.is_active = True
-    user_example.is_admin = False
     user_service = make_user_service(
         get_by_id=user_example,
-        get_by_email=None,
-        get_by_name=None,
-        update_profile=user_example
+        update_status=user_example
     )
 
-    user_service.update_user(
+    user_service.update_user_status(
         actor_id=999,
         user_id=user_example.user_id,
-        name="User_1",
-        email=user_example.email,
-        is_active=False  # Chuyển sang inactive
+        is_active=False
     )
 
-    # Kiểm tra gọi revoke_user_sessions với TTL 3600 (settings.access_token_expire_minutes * 60)
     user_service.redis_service.revoke_user_sessions.assert_called_once_with(
         user_id=user_example.user_id,
         ttl=3600
@@ -604,7 +636,7 @@ def test_delete_user_success(make_user_service, user_example):
     Xóa mềm tài khoản hợp lệ (actor_id khác user_id, user tồn tại và không phải admin)
     => Đã gọi soft_delete và revoke_user_sessions trong Redis
     """
-    user_example.is_admin = False
+    user_example.roles = []
     user_service = make_user_service(get_by_id=user_example)
 
     user_service.delete_user(actor_id=999, user_id=user_example.user_id)
@@ -646,8 +678,9 @@ def test_delete_user_admin_target_raises_privilege_violation_error(make_user_ser
     Xóa tài khoản Admin khác => PrivilegeViolationError
     """
     from app.core.exceptions import PrivilegeViolationError
+    from app.models.role import Role
 
-    user_example.is_admin = True
+    user_example.roles = [Role(name="Administrator", code="admin", is_system=True)]
     user_service = make_user_service(get_by_id=user_example)
 
     with pytest.raises(PrivilegeViolationError):
@@ -656,20 +689,21 @@ def test_delete_user_admin_target_raises_privilege_violation_error(make_user_ser
     user_service.user_repository.soft_delete.assert_not_called()
 
 
-def test_delete_user_already_inactive_skips_soft_delete(make_user_service, user_example):
+def test_delete_user_already_deleted_skips_soft_delete(make_user_service, user_example):
     """
-    Tài khoản đã ở trạng thái xóa mềm (is_active = False) từ trước
+    Tài khoản đã ở trạng thái xóa mềm (deleted_at IS NOT NULL) từ trước
     => Bỏ qua không gọi soft_delete và redis revoke_user_sessions
     """
-    user_example.is_admin = False
-    user_example.is_active = False
+    from datetime import datetime, timezone
+    from app.models.role import Role
+    user_example.roles = [Role(name="Regular User", code="user", is_system=True)]
+    user_example.deleted_at = datetime.now(timezone.utc)
     user_service = make_user_service(get_by_id=user_example)
 
     user_service.delete_user(actor_id=999, user_id=user_example.user_id)
 
     user_service.user_repository.soft_delete.assert_not_called()
     user_service.redis_service.revoke_user_sessions.assert_not_called()
-    user_example.is_active = True
 
 
 # ======    TEST HÀM RESTORE_USER   ======
@@ -679,23 +713,25 @@ def test_restore_user_success(make_user_service, user_example):
     Khôi phục tài khoản hợp lệ (actor_id khác user_id, user tồn tại và không phải admin)
     => Đã gọi repository.restore
     """
-    user_example.is_admin = False
-    user_example.is_active = False
+    from datetime import datetime, timezone
+    from app.models.role import Role
+    user_example.roles = [Role(name="Regular User", code="user", is_system=True)]
+    user_example.deleted_at = datetime.now(timezone.utc)
     user_service = make_user_service(get_by_id=user_example)
 
     user_service.restore_user(actor_id=999, user_id=user_example.user_id)
 
     user_service.user_repository.restore.assert_called_once_with(user=user_example)
-    user_example.is_active = True
 
 
-def test_restore_user_already_active_skips_restore(make_user_service, user_example):
+def test_restore_user_not_deleted_skips_restore(make_user_service, user_example):
     """
-    Tài khoản đã ở trạng thái hoạt động (is_active = True) từ trước
+    Tài khoản chưa từng bị xóa (deleted_at IS NULL)
     => Bỏ qua không gọi repository.restore
     """
-    user_example.is_admin = False
-    user_example.is_active = True
+    from app.models.role import Role
+    user_example.roles = [Role(name="Regular User", code="user", is_system=True)]
+    user_example.deleted_at = None
     user_service = make_user_service(get_by_id=user_example)
 
     user_service.restore_user(actor_id=999, user_id=user_example.user_id)
@@ -736,11 +772,116 @@ def test_restore_user_admin_target_raises_privilege_violation_error(make_user_se
     Khôi phục tài khoản Admin khác => PrivilegeViolationError
     """
     from app.core.exceptions import PrivilegeViolationError
+    from app.models.role import Role
 
-    user_example.is_admin = True
+    user_example.roles = [Role(name="Administrator", code="admin", is_system=True)]
     user_service = make_user_service(get_by_id=user_example)
 
     with pytest.raises(PrivilegeViolationError):
         user_service.restore_user(actor_id=999, user_id=user_example.user_id)
 
     user_service.user_repository.restore.assert_not_called()
+
+
+# ======    TEST HÀM GET_USER_BY_ID   ======
+
+def test_get_user_by_id_success(make_user_service, user_example):
+    """
+    Lấy thông tin chi tiết user theo ID thành công
+    """
+    user_service = make_user_service(get_by_id=user_example)
+
+    result = user_service.get_user_by_id(user_id=user_example.user_id)
+
+    assert result == user_example
+    user_service.user_repository.get_by_id.assert_called_once_with(user_example.user_id, with_roles=True)
+
+
+def test_get_user_by_id_not_found_raises_user_not_found_error(make_user_service):
+    """
+    Không tìm thấy user theo ID => UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+    user_service = make_user_service(get_by_id=None)
+
+    with pytest.raises(UserNotFoundError):
+        user_service.get_user_by_id(user_id=9999)
+
+
+def test_get_user_by_id_deleted_user_raises_user_not_found_error(make_user_service, user_example):
+    """
+    User đã bị xóa mềm (deleted_at IS NOT NULL) => Coi như không tồn tại (UserNotFoundError)
+    """
+    from datetime import datetime, timezone
+    from app.core.exceptions import UserNotFoundError
+    user_example.deleted_at = datetime.now(timezone.utc)
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(UserNotFoundError):
+        user_service.get_user_by_id(user_id=user_example.user_id)
+
+
+# ======    TEST HÀM ADMIN_RESET_PASSWORD   ======
+
+def test_admin_reset_password_success(make_user_service, user_example):
+    """
+    Admin yêu cầu đặt lại mật khẩu cho User thường hợp lệ
+    => Sinh reset token lưu Redis, thu hồi phiên JWT, trả về reset_url
+    """
+    from app.models.role import Role
+    user_example.roles = [Role(name="Regular User", code="user", is_system=True)]
+    user_example.is_active = True
+    user_service = make_user_service(get_by_id=user_example)
+
+    result = user_service.admin_reset_password(actor_id=999, user_id=user_example.user_id)
+
+    assert "reset_url" in result
+    assert result["email"] == user_example.email
+    assert result["user"] == user_example
+    user_service.user_repository.set_must_change_password.assert_called_once_with(user=user_example, must_change=True)
+    user_service.redis_service.save_reset_token.assert_called_once()
+    user_service.redis_service.revoke_user_sessions.assert_called_once()
+
+
+def test_admin_reset_password_not_found_raises_user_not_found_error(make_user_service):
+    """
+    User không tồn tại => UserNotFoundError
+    """
+    from app.core.exceptions import UserNotFoundError
+    user_service = make_user_service(get_by_id=None)
+
+    with pytest.raises(UserNotFoundError):
+        user_service.admin_reset_password(actor_id=999, user_id=9999)
+
+
+def test_admin_reset_password_target_admin_raises_privilege_violation_error(make_user_service, user_example):
+    """
+    Cố gắng reset mật khẩu của một Admin khác => PrivilegeViolationError
+    """
+    from app.core.exceptions import PrivilegeViolationError
+    from app.models.role import Role
+
+    user_example.roles = [Role(name="Administrator", code="admin", is_system=True)]
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(PrivilegeViolationError):
+        user_service.admin_reset_password(actor_id=999, user_id=user_example.user_id)
+
+    user_service.redis_service.save_reset_token.assert_not_called()
+
+
+def test_admin_reset_password_inactive_user_raises_account_locked_error(make_user_service, user_example):
+    """
+    User đang bị khóa (is_active=False) => AccountLockedError
+    """
+    from app.core.exceptions import AccountLockedError
+    from app.models.role import Role
+
+    user_example.roles = [Role(name="Regular User", code="user", is_system=True)]
+    user_example.is_active = False
+    user_service = make_user_service(get_by_id=user_example)
+
+    with pytest.raises(AccountLockedError):
+        user_service.admin_reset_password(actor_id=999, user_id=user_example.user_id)
+
+    user_service.redis_service.save_reset_token.assert_not_called()

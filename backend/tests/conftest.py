@@ -1,5 +1,11 @@
 
 import pytest
+import bcrypt
+
+# Tăng tốc độ bcrypt trong test (rounds=4 thay vì 12)
+_original_gensalt = bcrypt.gensalt
+bcrypt.gensalt = lambda rounds=4, prefix=b"2b": _original_gensalt(rounds=4, prefix=prefix)
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -11,6 +17,9 @@ from app.core.rbac import rbac_registry
 from app.db.base import Base
 from app import create_app
 
+# Tính toán băm mật khẩu 1 lần duy nhất thay vì băm lại mỗi khi gọi fixture
+DEFAULT_TEST_PASSWORD_HASH = hash_password("123456")
+
 @pytest.fixture
 def user_example():
     """
@@ -20,11 +29,11 @@ def user_example():
         user_id=1,
         name="user_1",
         email="user_1@example.com",
-        password=hash_password("123456"),
+        password=DEFAULT_TEST_PASSWORD_HASH,
         is_active=True,
         must_change_password=False,
     )
-    user.roles = [Role(role_id=2, name="Regular User", code="user", is_system=True)]
+    user.roles = []
     return user
 
 @pytest.fixture
@@ -36,11 +45,11 @@ def admin_example():
         user_id=999,
         name="admin_1",
         email="admin_1@example.com",
-        password=hash_password("123456"),
+        password=DEFAULT_TEST_PASSWORD_HASH,
         is_active=True,
         must_change_password=False,
     )
-    admin.roles = [Role(role_id=1, name="Administrator", code="admin", is_system=True)]
+    admin.roles = []
     return admin
 
 @pytest.fixture
@@ -48,7 +57,7 @@ def access_token(user_example):
     """
     Tạo access token cho user thường (roles=['user'])
     """
-    roles = [r.code for r in user_example.roles] or ["user"]
+    roles = [r.code for r in user_example.roles] if user_example.roles else ["user"]
     return create_access_token(user_example.user_id, roles=roles)
 
 @pytest.fixture
@@ -56,7 +65,7 @@ def admin_token(admin_example):
     """
     Tạo access token cho admin (roles=['admin'])
     """
-    roles = [r.code for r in admin_example.roles] or ["admin"]
+    roles = [r.code for r in admin_example.roles] if admin_example.roles else ["admin"]
     return create_access_token(admin_example.user_id, roles=roles)
 
 @pytest.fixture

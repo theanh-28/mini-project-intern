@@ -6,11 +6,11 @@ from app.models.audit_log import AuditLog
 @pytest.fixture(autouse=True, scope="module")
 def setup_audit_listener():
     """
-    Tự động gọi create_app() một lần trước khi chạy các test trong module này
-    để đảm bảo các event listener của SQLAlchemy được đăng ký.
+    Tự động gọi create_app(test_config={"TESTING": True}) một lần trước khi chạy các test trong module này
+    để đảm bảo các event listener của SQLAlchemy được đăng ký mà không kết nối MySQL thật.
     """
     from app import create_app
-    create_app()
+    create_app(test_config={"TESTING": True})
 
 
 def test_when_create_user_then_create_audit_log_generated(db_session, user_example):
@@ -119,6 +119,8 @@ def test_when_transaction_rolled_back_then_no_orphaned_logs(db_session, user_exa
     """
     Test tính toàn vẹn transaction: Nếu nghiệp vụ chính bị rollback, audit log cũng phải bị hủy.
     """
+    initial_count = db_session.query(AuditLog).count()
+
     # 1. Thêm user mới và flush xuống DB để kích hoạt event listener
     db_session.add(user_example)
     db_session.flush()
@@ -129,7 +131,7 @@ def test_when_transaction_rolled_back_then_no_orphaned_logs(db_session, user_exa
     db_session.rollback()
 
     # 3. Đảm bảo toàn bộ log liên quan bị rollback sạch sẽ
-    assert db_session.query(AuditLog).count() == 0
+    assert db_session.query(AuditLog).count() == initial_count
 
 
 def test_when_api_request_processed_then_actor_id_captured_correctly(client, admin_token, db_session, user_example):
@@ -151,7 +153,6 @@ def test_when_api_request_processed_then_actor_id_captured_correctly(client, adm
         json={
             "name": "user_updated_by_admin",
             "email": "user_1@example.com",
-            "is_active": True
         }
     )
     assert response.status_code == 200

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 from app.repositories.base_repository import BaseRepository
@@ -21,7 +22,8 @@ class UserRepository(BaseRepository):
         )
         # Gán role mặc định 'user'
         default_role = self.db.query(Role).filter(Role.code == "user").first()
-        new_user.roles.append(default_role)
+        if default_role:
+            new_user.roles.append(default_role)
 
         self.db.add(new_user)
         self.db.commit()
@@ -47,9 +49,14 @@ class UserRepository(BaseRepository):
         user.last_login = datetime.now(timezone.utc)
         self.db.commit()
     
-    def update_profile(self, user: User, name: str, email: str, is_active: bool) -> User:
+    def update_profile(self, user: User, name: str, email: str) -> User:
         user.name = name
-        user.email = email 
+        user.email = email
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+    
+    def update_status(self, user: User, is_active: bool) -> User:
         user.is_active = is_active
         self.db.commit()
         self.db.refresh(user)
@@ -60,13 +67,47 @@ class UserRepository(BaseRepository):
         user.must_change_password = False
         self.db.commit()
 
+    def set_must_change_password(self, user: User, must_change: bool = True) -> None:
+        user.must_change_password = must_change
+        self.db.commit()
+
     def soft_delete(self, user: User) -> None:
-        user.is_active = False
+        user.deleted_at = datetime.now(timezone.utc)
         self.db.commit()
 
     def restore(self, user: User) -> None:
-        user.is_active = True
+        user.deleted_at = None
         self.db.commit()
+
+    def _apply_filters(self, query, filters: dict):
+        filters = dict(filters) if filters else {}
+        role_filter = filters.pop("role", None)
+        search_filter = filters.pop("search", None)
+
+        if role_filter:
+            roles = [role_filter] if isinstance(role_filter, str) else role_filter
+            query = query.join(User.roles).filter(Role.code.in_(roles)).distinct()
+
+        if search_filter:
+            search_term = str(search_filter).strip()
+            if search_term:
+                query = query.filter(or_(User.name.ilike(f"%{search_term}%"), User.email.ilike(f"%{search_term}%")))
+
+        return super()._apply_filters(query, filters)
+
+    def get_page_with_count(
+        self,
+        page: int = 1,
+        limit: int = 100,
+        filters: dict = None
+    ) -> tuple[list, int]:
+        # Mặc định chỉ lấy tài khoản chưa bị xóa mềm (deleted_at IS NULL)
+        query = self.db.query(User).options(joinedload(User.roles)).filter(User.deleted_at.is_(None))
+        query = self._apply_filters(query, filters)
+        total = query.count()
+        skip = (page - 1) * limit
+        items = query.offset(skip).limit(limit).all()
+        return items, total
 
 def get_user_repository() -> UserRepository:
     from app.db.session import get_db

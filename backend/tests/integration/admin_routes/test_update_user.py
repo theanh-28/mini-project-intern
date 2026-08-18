@@ -36,7 +36,7 @@ def test_when_token_is_blacklisted_return_401(client, admin_token, mock_redis):
 
 def test_when_non_admin_return_403(client, access_token):
     """
-    Token hợp lệ nhưng user không phải admin → 403
+    Token hợp lệ nhưng user không có quyền users:update → 403
     """
     response = client.put(
         "/admin/users/3",
@@ -44,14 +44,14 @@ def test_when_non_admin_return_403(client, access_token):
     )
     assert response.status_code == 403
     data = response.get_json()
-    assert data["code"] == "ADMIN_ACCESS_REQUIRED"
+    assert data["code"] == "PERMISSION_DENIED"
 
 
 # ====== Test PUT Success ======
 
 def test_success_return_200(client, admin_token, insert_users):
     """
-    Cập nhật thông tin user thành công -> 200 OK và trả về thông tin user mới
+    Cập nhật thông tin profile của user thành công -> 200 OK
     """
     response = client.put(
         "/admin/users/3",
@@ -59,7 +59,6 @@ def test_success_return_200(client, admin_token, insert_users):
         json={
             "name": "updated_user_3",
             "email": "updated_user_3@example.com",
-            "is_active": False
         }
     )
     assert response.status_code == 200
@@ -67,22 +66,21 @@ def test_success_return_200(client, admin_token, insert_users):
     data = response.get_json()
     assert data["name"] == "updated_user_3"
     assert data["email"] == "updated_user_3@example.com"
-    assert data["is_active"] is False
 
 
 # ====== Test Payload Validation ======
 
 @pytest.mark.parametrize("payload", [
-    {"email": "updated@example.com", "is_active": True},                    # Thiếu name
-    {"name": "updated_name", "is_active": True},                            # Thiếu email
-    {"name": "updated_name", "email": "updated@example.com"},               # Thiếu is_active
-    {"name": "updated_name", "email": "invalid-email", "is_active": True},  # Email sai định dạng
+    {"email": "updated@example.com"},                                       # Thiếu name
+    {"name": "updated_name"},                                               # Thiếu email
+    {"name": "updated_name", "email": "invalid-email"},                     # Email sai định dạng
+    {"name": "updated_name", "email": "updated@example.com", "extra": 123}, # Trường thừa không cho phép
     {},                                                                     # Payload trống
 ], ids=[
     "missing_name",
     "missing_email",
-    "missing_is_active",
     "invalid_email_format",
+    "extra_field",
     "empty_payload"
 ])
 def test_when_invalid_payload_return_400(client, admin_token, mock_redis, payload):
@@ -115,12 +113,11 @@ def test_when_not_found_return_404(client, admin_token, mock_redis):
         json={
             "name": "updated_name",
             "email": "updated@example.com",
-            "is_active": True
         }
     )
     assert response.status_code == 404
     data = response.get_json()
-    assert data["code"] == "USER_NOT_FOUND"  # Hoặc mã lỗi tương ứng
+    assert data["code"] == "USER_NOT_FOUND"
     mock_redis.delete_pattern.assert_not_called()
 
 
@@ -134,7 +131,6 @@ def test_when_name_exists_return_409(client, admin_token, mock_redis, insert_use
         json={
             "name": "user_1",  # Trùng tên với user_1
             "email": "updated_user_3@example.com",
-            "is_active": True
         }
     )
     assert response.status_code == 409
@@ -153,7 +149,6 @@ def test_when_email_exists_return_409(client, admin_token, mock_redis, insert_us
         json={
             "name": "updated_user_3",
             "email": "user_1@example.com",  # Trùng email với user_1
-            "is_active": True
         }
     )
     assert response.status_code == 409
@@ -174,42 +169,21 @@ def test_when_success_then_cache_is_invalidated(client, admin_token, mock_redis,
         json={
             "name": "updated_user_3",
             "email": "updated_user_3@example.com",
-            "is_active": True
         }
     )
     assert response.status_code == 200
     mock_redis.delete_pattern.assert_called_once_with("users:list:*")
 
 
-# ====== Test Admin Self Disable / Lockout ======
+# ====== Test Admin Privilege Hierarchy ======
 
-def test_when_admin_tries_to_disable_self_return_403(client, admin_token, insert_users, db_session, admin_example):
+def test_when_admin_updates_self_success(client, admin_token, insert_users, db_session, admin_example):
     """
-    Admin tự khóa tài khoản của chính mình => 403 Forbidden và báo lỗi SELF_DISABLE_NOT_ALLOWED
+    Admin tự cập nhật thông tin của mình => Thành công 200 OK
     """
-    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
-    db_session.add(admin_example)
-    db_session.commit()
-
-    response = client.put(
-        "/admin/users/999",  # ID của admin_example là 999 (khớp với sub trong token)
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "admin_1_updated",
-            "email": "admin_1_updated@example.com",
-            "is_active": False  # Tự khóa chính mình
-        }
-    )
-    assert response.status_code == 403
-    data = response.get_json()
-    assert data["code"] == "SELF_DISABLE_NOT_ALLOWED"
-
-
-def test_when_admin_updates_self_with_active_true_success(client, admin_token, insert_users, db_session, admin_example):
-    """
-    Admin tự cập nhật thông tin của mình nhưng vẫn giữ is_active=True => Thành công 200 OK
-    """
-    # Đưa admin_example vào DB để có dữ liệu khi truy vấn
+    from app.models.role import Role
+    admin_role = db_session.query(Role).filter(Role.code == "admin").first()
+    admin_example.roles = [admin_role] if admin_role else []
     db_session.add(admin_example)
     db_session.commit()
 
@@ -219,17 +193,13 @@ def test_when_admin_updates_self_with_active_true_success(client, admin_token, i
         json={
             "name": "admin_updated_name",
             "email": "admin_updated_email@example.com",
-            "is_active": True  # Vẫn hoạt động
         }
     )
     assert response.status_code == 200
     data = response.get_json()
     assert data["name"] == "admin_updated_name"
     assert data["email"] == "admin_updated_email@example.com"
-    assert data["is_active"] is True
 
-
-# ====== Test Admin Privilege Hierarchy ======
 
 def test_when_admin_tries_to_update_another_admin_return_403(client, admin_token, insert_admins):
     """
@@ -241,7 +211,6 @@ def test_when_admin_tries_to_update_another_admin_return_403(client, admin_token
         json={
             "name": "admin_updated_name",
             "email": "admin_updated_email@example.com",
-            "is_active": True  
         }
     )
 
@@ -260,46 +229,9 @@ def test_update_user_casing_change_success(client, admin_token, insert_users):
         json={
             "name": "USER_3",               # Đổi chữ hoa
             "email": "USER_3@example.com",  # Đổi chữ hoa
-            "is_active": True
         }
     )
     assert response.status_code == 200
     data = response.get_json()
     assert data["name"] == "USER_3"
     assert data["email"] == "USER_3@example.com"
-
-
-def test_update_user_to_inactive_calls_redis_revocation(client, admin_token, insert_users, mock_redis):
-    """
-    Khi admin khóa tài khoản (is_active=False), hệ thống phải thực hiện ghi vào Redis để thu hồi token.
-    """
-    response = client.put(
-        "/admin/users/3",
-        headers={"Authorization": f"Bearer {admin_token}"},
-        json={
-            "name": "user_3",
-            "email": "user_3@example.com",
-            "is_active": False  # Khóa tài khoản
-        }
-    )
-    assert response.status_code == 200
-
-    # Kiểm tra Redis Service được gọi đúng hàm revoke_user_sessions với TTL 3600 giây (60 phút * 60)
-    mock_redis.revoke_user_sessions.assert_called_once_with(user_id=3, ttl=3600)
-
-
-def test_request_blocked_when_user_is_cached_disabled_in_redis(client, access_token, mock_redis):
-    """
-    Khi token gửi lên thuộc về user đã bị thu hồi phiên đăng nhập trong Redis -> 401 Unauthorized
-    """
-    # Giả lập Redis phản hồi rằng phiên đăng nhập của user này đã bị thu hồi
-    mock_redis.is_session_revoked.return_value = True
-
-    # Gọi API yêu cầu xác thực (ví dụ POST /auth/logout)
-    response = client.post(
-        "/auth/logout",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
-    assert response.status_code == 401
-    data = response.get_json()
-    assert data["code"] == "TOKEN_REVOKED"

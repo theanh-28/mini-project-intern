@@ -3,8 +3,6 @@ import json
 import logging
 from flask import request, make_response, g
 
-from app.core.exceptions import AdminAccessRequiredError
-
 logger = logging.getLogger(__name__)
 
 
@@ -69,25 +67,6 @@ def cache_response(key_builder, ttl: int = 60):
     return decorator
 
 
-def require_admin(func):
-    """
-    Decorator để check quyền admin cho các request cần quyền admin (tương thích ngược)
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        payload = g.get("current_user")
-        if not payload:
-            raise AdminAccessRequiredError("Yêu cầu đăng nhập")
-        
-        roles = payload.get("roles", [])
-        if "admin" not in roles:
-            raise AdminAccessRequiredError("Yêu cầu quyền Admin")
-        
-        return func(*args, **kwargs)
-    
-    return wrapper
-
-
 def require_permission(permission_code: str):
     """
     Decorator kiểm tra quyền RBAC của người dùng đối với tài nguyên.
@@ -114,7 +93,7 @@ def require_permission(permission_code: str):
                     roles,
                     permission_code,
                 )
-                raise PermissionDeniedError(f"Bạn không có quyền thực hiện hành động này ({permission_code})")
+                raise PermissionDeniedError(f"Bạn không có quyền thực hiện hành động này")
 
             return func(*args, **kwargs)
         return wrapper
