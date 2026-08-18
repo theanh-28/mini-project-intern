@@ -207,3 +207,35 @@ def test_when_reset_password_then_actor_id_captured_correctly(client, db_session
     assert log.actor_id == user_example.user_id
     # Đảm bảo mật khẩu mới trong log được che giấu
     assert log.new_value["password"] == "[REDACTED]"
+
+
+def test_when_request_has_forwarded_ip_then_ip_captured_correctly(client, db_session, user_example, mock_redis):
+    """
+    Test tích hợp: Khi request có header X-Forwarded-For từ Kong Gateway, AuditLog phải tự động lưu đúng ip_address.
+    """
+    db_session.add(user_example)
+    db_session.commit()
+
+    db_session.query(AuditLog).delete()
+    db_session.commit()
+
+    mock_redis.get_user_id_by_reset_token.return_value = str(user_example.user_id)
+
+    response = client.post(
+        "/auth/reset-password",
+        json={
+            "reset_token": "valid_reset_token",
+            "new_password": "new_secure_password_123",
+            "confirm_password": "new_secure_password_123"
+        },
+        headers={"X-Forwarded-For": "203.0.113.195, 10.0.0.1"}
+    )
+    assert response.status_code == 200
+
+    log = db_session.query(AuditLog).filter_by(
+        table_name="users",
+        target_id=str(user_example.user_id)
+    ).order_by(AuditLog.id.desc()).first()
+
+    assert log is not None
+    assert log.ip_address == "203.0.113.195"

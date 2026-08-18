@@ -1,3 +1,4 @@
+local cjson = require "cjson.safe"
 local jwt_decoder = require "kong.plugins.jwt.jwt_parser"
 
 local JwtToHeaderHandler = {
@@ -48,8 +49,14 @@ function JwtToHeaderHandler:access(conf)
       local claim_name, header_name = mapping:match("%s*([^%s:]+)%s*:%s*([^%s:]+)%s*")
       if claim_name and header_name then
         local value = jwt.claims[claim_name]
-        if value then
-          kong.service.request.set_header(header_name, tostring(value))
+        if value ~= nil then
+          local header_val
+          if type(value) == "table" then
+            header_val = cjson.encode(value)
+          else
+            header_val = tostring(value)
+          end
+          kong.service.request.set_header(header_name, header_val)
         else
           kong.service.request.clear_header(header_name)
         end

@@ -18,7 +18,7 @@ services:
           - name: rate-limiting
             config:
               second: 5
-              minute: 10
+              minute: 100
               limit_by: ip
               policy: redis
               redis_host: ${KONG_REDIS_HOST}
@@ -32,10 +32,12 @@ services:
         paths:
           - /auth/logout
           - /admin/users
+          - /admin/audit-logs
         methods:
           - GET
           - POST
           - PUT
+          - PATCH
           - DELETE
           - OPTIONS
         strip_path: false
@@ -58,11 +60,14 @@ services:
             config:
               claims:
                 - sub:x-user-id
+                - roles:x-user-roles
+                - jti:x-token-jti
+                - exp:x-token-exp
 
           - name: rate-limiting
             config:
               second: 5
-              minute: 10
+              minute: 100
               limit_by: header
               header_name: x-user-id
               policy: redis
@@ -82,6 +87,7 @@ plugins:
         - GET
         - POST
         - PUT
+        - PATCH
         - DELETE
         - OPTIONS
       headers:

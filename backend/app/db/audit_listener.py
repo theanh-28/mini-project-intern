@@ -2,12 +2,13 @@ import logging
 from datetime import datetime, date
 from decimal import Decimal
 from uuid import UUID
-from flask import g
+from flask import g, request, has_request_context
 from sqlalchemy.orm.attributes import get_history
 
 from app.models.audit_log import AuditLog
 
 logger = logging.getLogger(__name__)
+
 
 def serialize_field(val):
     """
@@ -22,20 +23,42 @@ def serialize_field(val):
         return str(val)
     return val
 
+
 def get_current_actor_id():
     """
     Lấy actor_id từ request context của flask
     """
     try:
-        current_user = getattr(g, "current_user", None)
-        if current_user:
-            sub = current_user.get("sub")
-            if sub is not None:
-                return int(sub)
+        if has_request_context():
+            current_user = getattr(g, "current_user", None)
+            if current_user:
+                sub = current_user.get("sub")
+                if sub is not None:
+                    return int(sub)
     except (RuntimeError, ValueError, TypeError):
         # Tránh crash nếu ngoài request context hoặc sub bị thiếu/sai định dạng
         pass
     return None
+
+
+def get_current_client_ip():
+    """
+    Lấy IP client từ request context của Flask.
+    Hỗ trợ lấy IP thật qua proxy/Gateway (Kong Header X-Forwarded-For, X-Real-IP).
+    """
+    try:
+        if has_request_context():
+            forwarded = request.headers.get("X-Forwarded-For")
+            if forwarded:
+                return forwarded.split(",")[0].strip()
+            real_ip = request.headers.get("X-Real-IP")
+            if real_ip:
+                return real_ip.strip()
+            return request.remote_addr
+    except Exception:
+        pass
+    return None
+
 
 def get_changed_values(obj):
     """
@@ -82,6 +105,7 @@ def before_flush_listener(session, flush_context, instances=None):
     SQLAlchemy event listener bắt sự kiện trước khi session thực hiện flush dữ liệu xuống db
     """
     actor_id = get_current_actor_id()
+    ip_address = get_current_client_ip()
     pending_logs = []
 
     # 1. Xử lý khi tạo mới đối tượng (CREATE - session.new)
@@ -109,7 +133,8 @@ def before_flush_listener(session, flush_context, instances=None):
             table_name=obj.__tablename__,
             target_id=None,   # Điền ở after_flush
             old_value=None,
-            new_value=new_values
+            new_value=new_values,
+            ip_address=ip_address,
         )
         pending_logs.append((obj, log))
 
@@ -129,7 +154,8 @@ def before_flush_listener(session, flush_context, instances=None):
             table_name=obj.__tablename__,
             target_id=None,   # Điền ở after_flush
             old_value=old_values,
-            new_value=new_values
+            new_value=new_values,
+            ip_address=ip_address,
         )
         pending_logs.append((obj, log))
 
@@ -158,7 +184,8 @@ def before_flush_listener(session, flush_context, instances=None):
             table_name=obj.__tablename__,
             target_id=None,  
             old_value=old_values,
-            new_value=None
+            new_value=None,
+            ip_address=ip_address,
         )
         pending_logs.append((obj, log))
 
@@ -186,4 +213,3 @@ def after_flush_listener(session, flush_context):
                     log.new_value[col.name] = str(getattr(obj, col.name))
         
         session.add(log)
-

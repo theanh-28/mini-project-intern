@@ -15,6 +15,7 @@ class AuditLog(Base):
     target_id = Column(String(50), nullable=False)
     old_value = Column(JSON, nullable=True)
     new_value = Column(JSON, nullable=True)
+    ip_address = Column(String(45), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__= (

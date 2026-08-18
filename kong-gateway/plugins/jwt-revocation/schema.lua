@@ -12,7 +12,7 @@ return {
           { redis_db = { type = "integer", default = 0 } },            
           { redis_timeout = { type = "integer", default = 1000 } },      
           { blacklist_prefix = { type = "string", default = "blacklist:" } }, -- Prefix key cho token bị thu hồi
-          { account_lock_prefix = { type = "string", default = "user:lock_at:" } }, -- Prefix key cho tài khoản bị khóa
+          { account_lock_prefix = { type = "string", default = "user:revoke_at:" } }, -- Prefix key cho phiên bị thu hồi/khóa
         },
       },
     },
