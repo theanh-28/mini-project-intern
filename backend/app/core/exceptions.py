@@ -140,3 +140,9 @@ class PermissionDeniedError(PermissionException):
     """Ngoại lệ khi user không có quyền (permission) truy cập tài nguyên"""
     def __init__(self, message: str = "Bạn không có quyền thực hiện hành động này"):
         super().__init__(message, status_code=403, code_error="PERMISSION_DENIED")
+
+
+class AuditLogNotFoundError(AppException):
+    """Ngoại lệ khi không tìm thấy bản ghi audit log"""
+    def __init__(self, message: str = "Audit Log không tồn tại"):
+        super().__init__(message, status_code=404, code_error="AUDIT_LOG_NOT_FOUND")

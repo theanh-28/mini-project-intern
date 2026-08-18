@@ -48,7 +48,7 @@ function TokenRevocationHandler:access(conf)
     return -- Fail-Open
   end
 
-  -- 4. Kiểm tra Key blacklist:<jti> có tồn tại không
+  -- 4. Kiểm tra Key blacklist:<jti> có tồn tại không (Token đã đăng xuất)
   local blacklist_key = conf.blacklist_prefix .. jti
   local exists_blacklist, err = red:exists(blacklist_key)
   if err then
@@ -57,21 +57,29 @@ function TokenRevocationHandler:access(conf)
     return -- Fail-Open
   end
 
-  -- 5. Kiểm tra Key user:lock_at:<user_id> có tồn tại không
+  if exists_blacklist == 1 then
+    red:set_keepalive(10000, 100)
+    return kong.response.exit(401, { message = "Token đã bị thu hồi do đăng xuất" })
+  end
+
+  -- 5. Kiểm tra Key user:revoke_at:<user_id> (Phiên bị thu hồi do đổi mật khẩu / khóa tài khoản)
   local account_lock_key = conf.account_lock_prefix .. user_id
-  local exists_account_lock, err = red:exists(account_lock_key)
+  local revoked_at, err = red:get(account_lock_key)
   if err then
-    kong.log.err("Lỗi kiểm tra account lock key trong Redis: ", err)
-    red:set_keepalive(10000, 100) -- Trả kết nối về pool trước khi return
+    kong.log.err("Lỗi kiểm tra revocation key trong Redis: ", err)
+    red:set_keepalive(10000, 100)
     return -- Fail-Open
   end
   
   -- Trả kết nối Redis về pool để tối ưu hiệu năng
   red:set_keepalive(10000, 100)
 
-  -- 6. Nếu tồn tại trong Blacklist hoặc tài khoản bị khóa, từ chối truy cập
-  if exists_blacklist == 1 or exists_account_lock == 1 then
-    return kong.response.exit(401, { message = "Token không hợp lệ" })
+  -- 6. So sánh thời điểm phát hành token (iat) với thời điểm thu hồi (revoked_at)
+  if revoked_at and revoked_at ~= ngx.null then
+    local token_iat = jwt.claims and jwt.claims.iat
+    if token_iat and tonumber(token_iat) < tonumber(revoked_at) then
+      return kong.response.exit(401, { message = "Phiên đăng nhập đã bị thu hồi hoặc hết hạn" })
+    end
   end
 end
 
