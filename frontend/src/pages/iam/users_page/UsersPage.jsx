@@ -42,6 +42,7 @@ export default function UsersPage() {
                         loading={usersTable.loading} 
                         error={usersTable.error} 
                         page={usersTable.page} 
+                        onRefresh={usersTable.fetchUsers}
                     />
                 </div>
                 <div className={styles.footer}>

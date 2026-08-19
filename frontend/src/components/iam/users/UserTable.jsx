@@ -1,22 +1,23 @@
 import styles from './UserTable.module.css';
 import Spinner from '@/components/common/Spinner';
 import Button from '@/components/common/Button';
-import { CircleCheck, Ban, Shield, User, Trash2, RotateCcw } from 'lucide-react';
+import { CircleCheck, Ban, Shield, User, Trash2 } from 'lucide-react';
 import { useUserActions } from '@/hooks/useUserActions';
 import UserConfirmModal from '@/components/iam/users/UserConfirmModal';
 import { Link } from 'react-router-dom';
 import { PATHS } from '@/constants/routes';
 
-export default function UserTable({ users, loading, error, page}) {
+export default function UserTable({ users, loading, error, page, onRefresh }) {
     const {
         confirmModal,
         loading: actionLoading,
         error: actionError,
+        statusLoadingId,
         openDeleteModal,
-        openRestoreModal,
+        openStatusModal,
         closeModal,
         handleConfirm,
-    } = useUserActions();
+    } = useUserActions({ onRefresh });
 
     return (
         <>
@@ -65,28 +66,60 @@ export default function UserTable({ users, loading, error, page}) {
                                 )}
                             </td>
                             <td className={styles.role}>
-                                {user.roles?.includes('admin') ? (
-                                    <div className={styles.roleAdmin}>
-                                        <Shield strokeWidth={3} size={15} color='#6262f4' /> Admin
-                                    </div>
-                                ) : (
-                                    <div className={styles.roleUser}>
-                                        <User strokeWidth={3} size={15} color='#06065f' /> User
-                                    </div>
-                                )}
+                                <div className={styles.rolesContainer}>
+                                    {user.roles && user.roles.length > 0 ? (
+                                        user.roles.map((role) => (
+                                            <div
+                                                key={role}
+                                                className={role === 'admin' ? styles.roleAdmin : styles.roleItem}
+                                            >
+                                                {role === 'admin' ? (
+                                                    <Shield strokeWidth={2.5} size={13} color='#6262f4' />
+                                                ) : (
+                                                    <User strokeWidth={2.5} size={13} color='#06065f' />
+                                                )}
+                                                <span>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className={styles.noRole}>-</span>
+                                    )}
+                                </div>
                             </td>
                             <td>{new Date(user.created_at).toLocaleDateString()}</td>
                             <td>{user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
                             <td className={styles.action}>
-                                {user.is_active ? (
-                                    <Button className={styles.delete} onClick={() => openDeleteModal(user)}>
-                                        <Trash2 strokeWidth={3} size={15} color='#fff' /> Delete
+                                <div className={styles.actionGroup}>
+                                    {/* Action 1: Toggle Status is_active */}
+                                    {user.is_active ? (
+                                        <Button
+                                            className={styles.toggleDeactivate}
+                                            onClick={() => openStatusModal(user)}
+                                            disabled={statusLoadingId === user.user_id}
+                                            title="Deactivate account"
+                                        >
+                                            <Ban strokeWidth={2.5} size={14} /> Deactivate
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            className={styles.toggleActivate}
+                                            onClick={() => openStatusModal(user)}
+                                            disabled={statusLoadingId === user.user_id}
+                                            title="Activate account"
+                                        >
+                                            <CircleCheck strokeWidth={2.5} size={14} /> Activate
+                                        </Button>
+                                    )}
+
+                                    {/* Action 2: Soft Delete User */}
+                                    <Button
+                                        className={styles.delete}
+                                        onClick={() => openDeleteModal(user)}
+                                        title="Delete user"
+                                    >
+                                        <Trash2 strokeWidth={2.5} size={14} /> Delete
                                     </Button>
-                                ) : (
-                                    <Button className={styles.restore} onClick={() => openRestoreModal(user)}>
-                                        <RotateCcw strokeWidth={3} size={15} color='#fff' /> Restore
-                                    </Button>
-                                )}
+                                </div>
                             </td>
                         </tr>
                     ))}

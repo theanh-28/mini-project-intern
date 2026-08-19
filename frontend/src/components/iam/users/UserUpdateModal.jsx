@@ -1,7 +1,6 @@
 import styles from './UserUpdateModal.module.css';
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
-import Switch from '@/components/common/Switch';
 import { User, Mail } from 'lucide-react';
 
 export default function UserUpdateModal({
@@ -32,7 +31,7 @@ export default function UserUpdateModal({
                         label="Username" 
                         placeholder="Enter username" 
                         onChange={handleChange}
-                        leftIcon={<User strokeWidth='3' size={18} style={{pointerEvents:'none'}}/>}
+                        leftIcon={<User strokeWidth='3' size={18} style={{ pointerEvents: 'none' }} />}
                     />
 
                     <Input 
@@ -43,20 +42,8 @@ export default function UserUpdateModal({
                         placeholder="Enter email" 
                         value={values.email} 
                         onChange={handleChange} 
-                        leftIcon={<Mail strokeWidth='3' size={18} style={{pointerEvents:'none'}}/>}
+                        leftIcon={<Mail strokeWidth='3' size={18} style={{ pointerEvents: 'none' }} />}
                     />
-
-                    <section className={styles.status}>
-                        <span className={styles.label}>Status</span>
-                        <div className={styles.switch}>
-                            <Switch name='is_active' onChange={handleChange} checked={values.is_active}/>
-                            {values.is_active ? (
-                                <span className={styles.value}>Active</span>
-                            ) : (
-                                <span className={styles.value}>Inactive</span>
-                            )}
-                        </div>
-                    </section>
 
                     {errorMsg && (
                         <div className={styles.errorMsg}>

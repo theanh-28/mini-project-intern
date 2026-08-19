@@ -41,4 +41,8 @@ export const adminService = {
         const response = await api.patch(`/admin/users/${userId}/status`, { is_active: isActive });
         return response.data;
     },
+    adminResetPassword: async (userId) => {
+        const response = await api.post(`/admin/users/${userId}/reset-password`);
+        return response.data;
+    },
 };

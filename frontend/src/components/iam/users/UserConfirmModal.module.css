@@ -55,6 +55,30 @@
   border-radius: 4px;
 }
 
+.successContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.successIcon {
+  margin-bottom: 4px;
+}
+
+.successTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-success, #16a34a);
+}
+
+.successMsgText {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
 .btns {
   display: flex;
   justify-content: center;
@@ -69,6 +93,16 @@
   width: auto;
   font-size: 0.95rem;
   padding: 8px 16px;
+}
+
+.closeSuccessBtn {
+  background-color: var(--color-primary, #25a2eb);
+  color: #fff;
+  min-width: 100px;
+}
+
+.closeSuccessBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #1d4ed8);
 }
 
 .cancelBtn {

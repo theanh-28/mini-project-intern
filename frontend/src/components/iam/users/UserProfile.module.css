@@ -49,7 +49,6 @@
 
 .infoRow .value {
     color: var(--color-primary);
-
 }
 
 .status {
@@ -82,6 +81,13 @@
     font-size: 0.8rem;
 }
 
+.rolesContainer {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
 .roleAdmin {
     display: inline-flex;
     align-items: center;
@@ -92,7 +98,8 @@
     gap: 5px;
 }
 
-.roleUser {
+.roleUser,
+.roleItem {
     display: inline-flex;
     align-items: center;
     border: 1px solid var(--color-info);
@@ -101,7 +108,6 @@
     padding: 2px 5px;
     gap: 5px;
 }
-
 
 .action {
     display: flex;
@@ -128,18 +134,22 @@
     background-color: var(--color-primary, #25a2eb);
 }
 
+.action .deactivateBtn,
 .action .deleteBtn {
     background-color: var(--color-error, #dc2626);
 }
 
+.action .deactivateBtn:hover,
 .action .deleteBtn:hover {
     background-color: var(--color-error, #dc2626);
 }
 
+.action .activateBtn,
 .action .restoreBtn {
     background-color: var(--color-success, #16a34a);
 }
 
+.action .activateBtn:hover,
 .action .restoreBtn:hover {
     background-color: var(--color-success, #16a34a);
 }

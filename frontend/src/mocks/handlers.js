@@ -127,7 +127,7 @@ export const handlers = [
       name: body.name,
       email: body.email,
       is_active: true,
-      roles: ['user'],
+      roles: body.roles || ['user'],
       created_at: new Date().toISOString(),
       last_login: null,
     };
@@ -138,62 +138,76 @@ export const handlers = [
     return HttpResponse.json(newUser, { status: 201 });
   }),
 
-  // DELETE /admin/users/:user_id
-  http.delete(`${API_URL}/admin/users/:id`, async ({ params }) => {
+  // PATCH /admin/users/:id/status (Bật / Tắt trạng thái hoạt động is_active)
+  http.patch(`${API_URL}/admin/users/:id/status`, async ({ request, params }) => {
     const { id } = params;
-    const user_id = Number(id);
-
-    const user = users.find((u) => u.user_id === user_id);
+    const body = await request.json();
+    const user = users.find((u) => String(u.user_id) === String(id));
 
     if (user) {
-      user.is_active = false;
-      return HttpResponse.json('', { status: 204 });
+      user.is_active = body.is_active !== undefined ? Boolean(body.is_active) : !user.is_active;
+      return HttpResponse.json({ ...user, message: 'Cập nhật trạng thái thành công' }, { status: 200 });
     }
-    return HttpResponse.json('User Not Found', { status: 404 });
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
   }),
 
-  // POST /admin/users/:user_id/restore
+  // POST /admin/users/:id/reset-password (Admin gửi yêu cầu đặt lại mật khẩu)
+  http.post(`${API_URL}/admin/users/:id/reset-password`, async ({ params }) => {
+    const { id } = params;
+    const user = users.find((u) => String(u.user_id) === String(id));
+
+    if (user) {
+      return HttpResponse.json({ message: `Hướng dẫn đặt lại mật khẩu đã được gửi đến ${user.email}` }, { status: 200 });
+    }
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
+  }),
+
+  // DELETE /admin/users/:id (Xóa user)
+  http.delete(`${API_URL}/admin/users/:id`, async ({ params }) => {
+    const { id } = params;
+    const index = users.findIndex((u) => String(u.user_id) === String(id));
+
+    if (index !== -1) {
+      users.splice(index, 1);
+      return new HttpResponse(null, { status: 204 });
+    }
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
+  }),
+
+  // POST /admin/users/:id/restore (Khôi phục user)
   http.post(`${API_URL}/admin/users/:id/restore`, async ({ params }) => {
     const { id } = params;
-    const user_id = Number(id);
-
-    const user = users.find((u) => u.user_id === user_id);
+    const user = users.find((u) => String(u.user_id) === String(id));
 
     if (user) {
       user.is_active = true;
-      return HttpResponse.json('', { status: 204 });
+      return HttpResponse.json({ ...user, message: 'Khôi phục tài khoản thành công' }, { status: 200 });
     }
-    return HttpResponse.json('User Not Found', { status: 404 });
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
   }),
 
-  // GET /admin/users/:user_id
+  // GET /admin/users/:id
   http.get(`${API_URL}/admin/users/:id`, async ({ params }) => {
     const { id } = params;
-    const user_id = Number(id);
-
-    const user = users.find((u) => u.user_id === user_id);
+    const user = users.find((u) => String(u.user_id) === String(id));
 
     if (user) {
       return HttpResponse.json({ ...user }, { status: 200 });
     }
-    return HttpResponse.json('User Not Found', { status: 404 });
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
   }),
 
-  // PUT /admin/users/:user_id
+  // PUT /admin/users/:id
   http.put(`${API_URL}/admin/users/:id`, async ({ request, params }) => {
     const body = await request.json();
     const { id } = params;
-    const user_id = Number(id);
-
-    const user = users.find((u) => u.user_id === user_id);
+    const user = users.find((u) => String(u.user_id) === String(id));
 
     if (user) {
-      for (const [key, value] of Object.entries(body)) {
-        user[key] = value;
-      }
+      Object.assign(user, body);
       return HttpResponse.json({ ...user }, { status: 200 });
     }
 
-    return HttpResponse.json('User Not Found', { status: 404 });
+    return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
   }),
 ];
