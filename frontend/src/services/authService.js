@@ -6,6 +6,18 @@ export const authService = {
         return response.data;
     },
     logout: async () => {
-        return await api.post('/auth/logout')
-    }
-}
+        return await api.post('/auth/logout');
+    },
+    forgotPassword: async (email) => {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    },
+    resetPassword: async (token, newPassword, confirmPassword) => {
+        const response = await api.post('/auth/reset-password', {
+            reset_token:token,
+            new_password: newPassword,
+            confirm_password: confirmPassword,
+        });
+        return response.data;
+    },
+};

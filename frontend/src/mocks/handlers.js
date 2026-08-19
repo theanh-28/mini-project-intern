@@ -57,6 +57,54 @@ export const handlers = [
     return new HttpResponse(null, { status: 200 });
   }),
 
+  // POST /auth/forgot-password
+  http.post(`${API_URL}/auth/forgot-password`, async ({ request }) => {
+    const body = await request.json();
+    const { email } = body || {};
+
+    if (!email) {
+      return HttpResponse.json(
+        { detail: 'Vui lòng nhập email' },
+        { status: 400 }
+      );
+    }
+
+    return HttpResponse.json({
+      message: 'Link khôi phục mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư!',
+    });
+  }),
+
+  // POST /auth/reset-password
+  http.post(`${API_URL}/auth/reset-password`, async ({ request }) => {
+    const body = await request.json();
+    const { new_password, confirm_password, reset_token } = body || {};
+
+    if (!reset_token) {
+      return HttpResponse.json(
+        { detail: 'Token khôi phục không hợp lệ hoặc đã hết hạn' },
+        { status: 400 }
+      );
+    }
+
+    if (!new_password || !confirm_password) {
+      return HttpResponse.json(
+        { detail: 'Vui lòng nhập đầy đủ mật khẩu mới và xác nhận mật khẩu' },
+        { status: 400 }
+      );
+    }
+
+    if (new_password !== confirm_password) {
+      return HttpResponse.json(
+        { detail: 'Mật khẩu và xác nhận mật khẩu không khớp' },
+        { status: 400 }
+      );
+    }
+
+    return HttpResponse.json({
+      message: 'Đặt lại mật khẩu thành công!',
+    });
+  }),
+
   // GET /admin/users (Lấy danh sách user kèm phân trang + tìm kiếm + lọc)
   http.get(`${API_URL}/admin/users`, async ({ request }) => {
     const url = new URL(request.url);
