@@ -1,0 +1,95 @@
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    user-select: none;
+}
+
+.pageBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    background-color: #fff;
+    color: var(--color-text, #1e293b);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pageBtn:hover:not(:disabled) {
+    background-color: var(--color-bg, #f1f5f9);
+    border-color: var(--color-primary, #25a2eb);
+    color: var(--color-primary, #25a2eb);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.pageBtn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pageBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background-color: var(--color-bg-alt, #ffffff);
+    border-color: var(--color-border, #e2e8f0);
+    color: var(--color-text-muted, #94a3b8);
+}
+
+.pageDisplay {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    background-color: var(--color-bg-alt, #ffffff);
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 8px;
+    height: 36px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pageInput {
+    width: 44px;
+    height: 28px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text, #0f172a);
+    background-color: var(--color-bg, #f8fafc);
+    border: 1px solid var(--color-border, #cbd5e1);
+    border-radius: 6px;
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.pageInput:focus {
+    border-color: var(--color-primary, #25a2eb);
+    box-shadow: 0 0 0 3px rgba(37, 162, 235, 0.18);
+    background-color: #ffffff;
+}
+
+.totalPagesText {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-muted, #64748b);
+    white-space: nowrap;
+}
+
+/* Ẩn mũi tên tăng/giảm trên Chrome, Safari, Edge, Opera */
+.pageInput::-webkit-outer-spin-button,
+.pageInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Ẩn mũi tên tăng/giảm trên Firefox */
+.pageInput[type=number] {
+    -moz-appearance: textfield;
+}

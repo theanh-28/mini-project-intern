@@ -9,10 +9,13 @@
   --color-info: #0ea5e9;
 
   --color-bg: #dee6f6;
-  --color-bg-alt: #f8fafc;
+  --color-bg-alt: #f3f8fe;
   --color-text: #0f172a;
   --color-text-muted: #64748b;
   --color-border: #e2e8f0;
+
+  --color-sidebar: #263950;
+  --sidebar-darker:#0e141b;
 }
 
 html, body {

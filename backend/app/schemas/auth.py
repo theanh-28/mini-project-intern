@@ -4,7 +4,7 @@ Dùng pydantic để xác thực dữ liệu
 
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict, model_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, model_validator, Field
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -32,11 +32,11 @@ class ForgotPasswordRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 class ResetPasswordRequest(BaseModel):
-    reset_token: str
-    new_password: str
-    confirm_password: str
+    reset_token: str = Field(alias="resetToken")
+    new_password: str = Field(alias="newPassword")
+    confirm_password: str = Field(alias="confirmPassword")
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     @model_validator(mode="after")
     def validate_password(self):

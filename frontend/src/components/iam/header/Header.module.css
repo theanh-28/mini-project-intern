@@ -1,0 +1,62 @@
+.card {
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-primary);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    flex-shrink: 1;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.menuBtn {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.menuBtn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.menuIcon {
+    width: 30px;
+    height: 30px;
+    color: #ffffff;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.menuBtn:hover .menuIcon {
+    color: #e0e0e0;
+    transform: scale(1.2);
+}
+
+h1 {
+    font-size: 36px;
+    font-weight: 900;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bell {
+    height: 24px;
+    width: 24px;
+    stroke-width: 3px;
+}

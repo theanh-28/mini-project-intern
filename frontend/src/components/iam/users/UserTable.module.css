@@ -1,0 +1,188 @@
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead tr {
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    background-color: var(--color-bg-alt);
+    white-space: nowrap;
+}
+
+thead th {
+    padding: 8px;
+    border-bottom: solid var(--color-border);
+    border-width: 1px 0 1px 0;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #fff;
+}
+
+tbody tr:hover {
+    background-color: #ececec;
+}
+
+tbody td {
+    padding: 8px;
+    border-bottom: solid var(--color-border);
+    border-width: 1px 0 1px 0;
+    text-align: left;
+}
+
+.status {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.statusActive {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-success);
+    border-radius: 10px;
+    background-color: rgba(34, 197, 94, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.statusInactive {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-error);
+    border-radius: 10px;
+    background-color: rgba(239, 68, 68, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.role {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.rolesContainer {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.roleAdmin {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-warning);
+    border-radius: 10px;
+    background-color: rgba(255, 193, 7, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.roleUser,
+.roleItem {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-info);
+    border-radius: 10px;
+    background-color: rgba(50, 152, 255, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.action {
+    white-space: nowrap;
+}
+
+.actionGroup {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action .delete,
+.delete {
+    min-width: 70px;
+    height: 28px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background-color: var(--color-error);
+    border: 1px solid #FECACA;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.action .delete:hover:not(:disabled),
+.delete:hover:not(:disabled) {
+    background-color: var(--color-error);
+    transform: scale(1.05);
+}
+
+.action .restore,
+.restore,
+.toggleActivate {
+    min-width: 95px;
+    height: 28px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background-color: var(--color-success);
+    border: 1px solid #A7F3D0;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.action .restore:hover:not(:disabled),
+.restore:hover:not(:disabled),
+.toggleActivate:hover:not(:disabled) {
+    background-color: var(--color-success);
+    transform: scale(1.05);
+}
+
+.toggleDeactivate {
+    min-width: 95px;
+    height: 28px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background-color: var(--color-error);
+    border: 1px solid #FECACA;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.toggleDeactivate:hover:not(:disabled) {
+    background-color: var(--color-error);
+    transform: scale(1.05);
+}
+
+.userName a {
+    text-decoration: none;
+    color: var(--color-primary, #25a2eb);
+}
+
+.userName a:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}

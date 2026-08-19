@@ -5,7 +5,7 @@ import styles from './Button.module.css';
 export default function Button({
   children,
   type = 'button',
-  loading = false,
+  isLoading = false,
   disabled = false,
   className = '',
   onClick,
@@ -15,11 +15,11 @@ export default function Button({
     <button
       type={type}
       className={clsx(styles.btn, className)}
-      disabled={disabled || loading}
+      disabled={disabled || isLoading}
       onClick={onClick}
       {...props}
     >
-      {loading ? <Spinner size={20} /> : children}
+      {isLoading ? <Spinner size={20} /> : children}
     </button>
   );
 }

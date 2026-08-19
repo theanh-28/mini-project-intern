@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import { authService } from '../services/authService';
+import { authService } from '@/services/authService';
 
 export const AuthContext = createContext(null);
 
@@ -23,11 +23,21 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser && !isTokenExpired(token)) {
-            setUser(JSON.parse(savedUser));
+            try {
+                const parsed = JSON.parse(savedUser);
+                const roles = parsed.roles || [];
+                setUser({ ...parsed, roles });
+            } catch {
+                // Nếu localStorage có dữ liệu rác/lỗi => tự động dọn dẹp
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            }
         } else {
             // Token không có, hết hạn, hoặc sai format
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setUser(null);
         }
         setLoading(false);
     }, []);
@@ -39,11 +49,15 @@ export const AuthProvider = ({ children }) => {
             // Lưu token và thông tin user vào localStorage
             localStorage.setItem('token', data.access_token);
 
+            const roles = data.user.roles || [];
+            const permissions = data.user.permissions || [];
+
             const loggedUser = {
                 user_id: data.user.user_id,
                 email: data.user.email || email,
                 name: data.user.name,
-                is_admin: data.user.is_admin,
+                roles: roles,
+                permissions: permissions,
             };
             localStorage.setItem('user', JSON.stringify(loggedUser));
             setUser(loggedUser);

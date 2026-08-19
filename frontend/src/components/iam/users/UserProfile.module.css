@@ -1,0 +1,163 @@
+.card {
+    background-color: #fff;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.avatar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.avatar .userName {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.avatar .userId {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 50px;
+}
+
+.userInfo .infoRow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.userInfo .infoRow:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+.infoRow .label {
+    font-weight: 700;
+}
+
+.infoRow .value {
+    color: var(--color-primary);
+}
+
+.status {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.statusActive {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-success);
+    border-radius: 10px;
+    background-color: rgba(34, 197, 94, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.statusInactive {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-error);
+    border-radius: 10px;
+    background-color: rgba(239, 68, 68, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.role {
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.rolesContainer {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.roleAdmin {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-warning);
+    border-radius: 10px;
+    background-color: rgba(255, 193, 7, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.roleUser,
+.roleItem {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-info);
+    border-radius: 10px;
+    background-color: rgba(50, 152, 255, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+}
+
+.action {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.action .btn {
+    display: flex;
+    gap: 5px;
+    border-radius: 3px;
+}
+
+.action .btn:hover:not(:disabled) {
+    transform: scale(1.02);
+    background-color: none;
+}
+
+.action .editBtn {
+    background-color: var(--color-primary, #25a2eb);
+}
+
+.action .editBtn:hover {
+    background-color: var(--color-primary, #25a2eb);
+}
+
+.action .deactivateBtn,
+.action .deleteBtn {
+    background-color: var(--color-error, #dc2626);
+}
+
+.action .deactivateBtn:hover,
+.action .deleteBtn:hover {
+    background-color: var(--color-error, #dc2626);
+}
+
+.action .activateBtn,
+.action .restoreBtn {
+    background-color: var(--color-success, #16a34a);
+}
+
+.action .activateBtn:hover,
+.action .restoreBtn:hover {
+    background-color: var(--color-success, #16a34a);
+}
+
+.action .resetBtn {
+    background-color: var(--color-success, #16a34a);
+}
+
+.action .resetBtn:hover {
+    background-color: var(--color-success, #16a34a);
+}

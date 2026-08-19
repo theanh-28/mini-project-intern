@@ -36,24 +36,7 @@
   gap: 2vh;
 }
 
-.toggleBtn {
-  position: absolute;
-  top: 50%;
-  right: 0.75rem;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  transition: color 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.toggleBtn:hover {
-  color: var(--color-primary);
-}
 
 .forgotLink {
   align-self: flex-end;
@@ -74,10 +57,13 @@
 
 .errorMsg {
   color: var(--color-error);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   text-align: center;
   width: fit-content;
-  padding: 3px 24px;
+  padding: 6px 16px;
   align-self: center;
-}
+  background-color: rgba(220, 38, 38, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
