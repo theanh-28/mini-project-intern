@@ -51,10 +51,8 @@ class AuditLogListRequest(BaseModel):
     """
     limit: int = Field(default=20, ge=1, le=100)
     cursor: Optional[str] = None  # UUIDv7 của bản ghi cuối cùng ở trang trước
-    actor_id: Optional[int] = None
     action: Optional[str] = None
     table_name: Optional[str] = None
-    target_id: Optional[str] = None
     search: Optional[str] = None
     created_at_from: Optional[datetime] = None
     created_at_to: Optional[datetime] = None

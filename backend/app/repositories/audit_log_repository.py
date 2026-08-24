@@ -24,21 +24,13 @@ class AuditLogRepository(BaseRepository):
 
         action_filter = filters.pop("action", None)
         table_name_filter = filters.pop("table_name", None)
-        target_id_filter = filters.pop("target_id", None)
-        actor_id_filter = filters.pop("actor_id", None)
         search_filter = filters.pop("search", None)
 
         if action_filter:
-            query = query.filter(AuditLog.action.ilike(f"{action_filter.strip()}"))
+            query = query.filter(AuditLog.action == action_filter.strip().upper())
 
         if table_name_filter:
             query = query.filter(AuditLog.table_name == table_name_filter.strip())
-
-        if target_id_filter:
-            query = query.filter(AuditLog.target_id == str(target_id_filter).strip())
-
-        if actor_id_filter is not None:
-            query = query.filter(AuditLog.actor_id == actor_id_filter)
 
         if search_filter:
             search_term = str(search_filter).strip()
@@ -46,7 +38,6 @@ class AuditLogRepository(BaseRepository):
                 query = query.outerjoin(AuditLog.actor).filter(
                     or_(
                         AuditLog.target_id.ilike(f"%{search_term}%"),
-                        AuditLog.action.ilike(f"%{search_term}%"),
                         AuditLog.table_name.ilike(f"%{search_term}%"),
                         AuditLog.ip_address.ilike(f"%{search_term}%"),
                         User.name.ilike(f"%{search_term}%"),

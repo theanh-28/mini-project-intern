@@ -1,0 +1,210 @@
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead tr {
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    background-color: var(--color-bg-alt);
+    white-space: nowrap;
+}
+
+thead th {
+    padding: 8px;
+    border-bottom: solid var(--color-border);
+    border-width: 1px 0 1px 0;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #fff;
+}
+
+tbody tr:hover {
+    background-color: #ececec;
+}
+
+tbody td {
+    padding: 8px;
+    border-bottom: solid var(--color-border);
+    border-width: 1px 0 1px 0;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.indexCell {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.timeCell {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    white-space: nowrap;
+}
+
+.actorCell {
+    min-width: 180px;
+}
+
+.actorContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.actorInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.actorName {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--color-text);
+}
+
+.actorEmail {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.systemActor {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.actionBadgeCell {
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.badgeCreate {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-success);
+    border-radius: 10px;
+    background-color: rgba(40, 167, 69, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+    color: var(--color-text);
+}
+
+.badgeUpdate {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-warning);
+    border-radius: 10px;
+    background-color: rgba(255, 193, 7, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+    color: var(--color-text);
+}
+
+.badgeDelete {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-error);
+    border-radius: 10px;
+    background-color: rgba(220, 53, 69, 0.15);
+    padding: 2px 5px;
+    gap: 5px;
+    color: var(--color-text);
+}
+
+.badgeDefault {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background-color: #f1f5f9;
+    padding: 2px 5px;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.targetCell {
+    white-space: nowrap;
+}
+
+.tableName {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    text-transform: capitalize;
+}
+
+.ipCell code {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    background-color: #f1f5f9;
+    border-radius: 4px;
+    color: var(--color-text-muted);
+}
+
+.action {
+    white-space: nowrap;
+    text-align: center;
+}
+
+.actionGroup {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action .view,
+.view {
+    min-width: 70px;
+    height: 28px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background-color: var(--color-primary, #2563eb);
+    border: 1px solid #93C5FD;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action .view:hover:not(:disabled),
+.view:hover:not(:disabled) {
+    background-color: var(--color-primary-hover, #1d4ed8);
+    transform: scale(1.05);
+}
+
+.loadingContainer,
+.emptyContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: var(--color-text-muted);
+}
+
+.errorContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 30px;
+    color: var(--color-error);
+}
