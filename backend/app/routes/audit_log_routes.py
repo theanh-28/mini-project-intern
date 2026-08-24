@@ -25,10 +25,8 @@ def get_audit_logs():
     audit_log_service = get_audit_log_service()
 
     filters = {
-        "actor_id": data.actor_id,
         "action": data.action,
         "table_name": data.table_name,
-        "target_id": data.target_id,
         "search": data.search,
         "created_at_from": data.created_at_from,
         "created_at_to": data.created_at_to,

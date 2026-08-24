@@ -258,4 +258,182 @@ export const handlers = [
 
     return HttpResponse.json({ error: 'User Not Found' }, { status: 404 });
   }),
+
+  // ==========================================
+  // AUDIT LOGS ENDPOINTS
+  // ==========================================
+
+  // GET /admin/audit-logs (Cursor-based Pagination)
+  http.get(`${API_URL}/admin/audit-logs`, async ({ request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const cursor = url.searchParams.get('cursor') || '';
+    const action = (url.searchParams.get('action') || '').toUpperCase();
+    const tableName = (url.searchParams.get('table_name') || '').toLowerCase();
+    const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+    const createdAtFrom = url.searchParams.get('created_at_from') || url.searchParams.get('start_date');
+    const createdAtTo = url.searchParams.get('created_at_to') || url.searchParams.get('end_date');
+
+    let filtered = [...auditLogs];
+
+    // Filter by action (exact match)
+    if (action) {
+      filtered = filtered.filter((log) => log.action === action);
+    }
+
+    // Filter by table_name (exact match)
+    if (tableName) {
+      filtered = filtered.filter((log) => log.table_name.toLowerCase() === tableName);
+    }
+
+    // Filter by search (target_id, table_name, ip_address, actor name, actor email)
+    if (search) {
+      filtered = filtered.filter(
+        (log) =>
+          log.target_id.toLowerCase().includes(search) ||
+          log.table_name.toLowerCase().includes(search) ||
+          (log.ip_address && log.ip_address.includes(search)) ||
+          (log.actor?.name && log.actor.name.toLowerCase().includes(search)) ||
+          (log.actor?.email && log.actor.email.toLowerCase().includes(search))
+      );
+    }
+
+    // Filter by created_at range
+    if (createdAtFrom) {
+      const from = new Date(createdAtFrom);
+      filtered = filtered.filter((log) => new Date(log.created_at) >= from);
+    }
+    if (createdAtTo) {
+      const to = new Date(`${createdAtTo}T23:59:59`);
+      filtered = filtered.filter((log) => new Date(log.created_at) <= to);
+    }
+
+    // Cursor pagination (find index after cursor)
+    let startIndex = 0;
+    if (cursor) {
+      const cursorIndex = filtered.findIndex((log) => log.id === cursor);
+      if (cursorIndex !== -1) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    const items = filtered.slice(startIndex, startIndex + limit);
+    const hasMore = startIndex + limit < filtered.length;
+    const nextCursor = items.length > 0 && hasMore ? items[items.length - 1].id : null;
+
+    // Rút gọn item (bỏ old_value / new_value cho list)
+    const listItems = items.map(({ old_value, new_value, ...rest }) => rest);
+
+    return HttpResponse.json({
+      audit_logs: listItems,
+      limit,
+      next_cursor: nextCursor,
+      has_more: hasMore,
+    });
+  }),
+
+  // GET /admin/audit-logs/:id (Chi tiết bản ghi)
+  http.get(`${API_URL}/admin/audit-logs/:id`, async ({ params }) => {
+    const { id } = params;
+    const log = auditLogs.find((l) => l.id === id);
+
+    if (log) {
+      return HttpResponse.json(log, { status: 200 });
+    }
+
+    return HttpResponse.json({ detail: 'Audit log not found' }, { status: 404 });
+  }),
+
+  // GET /admin/users/:userId/audit-logs (User timeline)
+  http.get(`${API_URL}/admin/users/:userId/audit-logs`, async ({ request, params }) => {
+    const { userId } = params;
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const cursor = url.searchParams.get('cursor') || '';
+
+    const userLogs = auditLogs.filter(
+      (log) => String(log.actor_id) === String(userId) || (log.table_name === 'users' && String(log.target_id) === String(userId))
+    );
+
+    let startIndex = 0;
+    if (cursor) {
+      const cursorIndex = userLogs.findIndex((log) => log.id === cursor);
+      if (cursorIndex !== -1) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    const items = userLogs.slice(startIndex, startIndex + limit);
+    const hasMore = startIndex + limit < userLogs.length;
+    const nextCursor = items.length > 0 && hasMore ? items[items.length - 1].id : null;
+    const listItems = items.map(({ old_value, new_value, ...rest }) => rest);
+
+    return HttpResponse.json({
+      audit_logs: listItems,
+      limit,
+      next_cursor: nextCursor,
+      has_more: hasMore,
+    });
+  }),
 ];
+
+// Helper sinh UUIDv7 giả lập
+function generateMockUUIDv7(timestampMs, index) {
+  const timeHex = timestampMs.toString(16).padStart(12, '0');
+  const indexHex = index.toString(16).padStart(4, '0');
+  return `0191${timeHex.slice(0, 4)}-${timeHex.slice(4, 8)}-7${indexHex.slice(0, 3)}-8a9b-${indexHex.padStart(12, 'a')}`;
+}
+
+// Tạo 150 mock audit logs
+const actions = ['CREATE', 'UPDATE', 'DELETE'];
+const tables = ['users', 'roles', 'permissions', 'user_roles'];
+const ips = ['192.168.1.10', '192.168.1.25', '10.0.0.12', '127.0.0.1', '172.16.0.5'];
+
+let auditLogs = Array.from({ length: 150 }, (_, i) => {
+  const timestamp = Date.now() - i * 3600000 * 2; // Cách nhau 2 tiếng
+  const action = actions[i % actions.length];
+  const table = tables[i % tables.length];
+  const actorUserId = (i % 8) + 1;
+  const targetId = String((i % 50) + 1);
+  const logId = generateMockUUIDv7(timestamp, i);
+
+  let oldValue = null;
+  let newValue = null;
+
+  if (action === 'CREATE') {
+    newValue = {
+      user_id: Number(targetId),
+      name: `User${targetId}`,
+      email: `user${targetId}@example.com`,
+      is_active: true,
+      created_at: new Date(timestamp).toISOString(),
+    };
+  } else if (action === 'UPDATE') {
+    oldValue = { is_active: true, name: `User${targetId}` };
+    newValue = { is_active: false, name: `User${targetId} (Updated)` };
+  } else if (action === 'DELETE') {
+    oldValue = {
+      user_id: Number(targetId),
+      name: `DeletedUser${targetId}`,
+      email: `del${targetId}@example.com`,
+    };
+  }
+
+  return {
+    id: logId,
+    actor_id: actorUserId,
+    actor: {
+      user_id: actorUserId,
+      name: actorUserId === 1 ? 'Admin Mock' : `User${actorUserId}`,
+      email: actorUserId === 1 ? 'admin@example.com' : `user${actorUserId}@example.com`,
+    },
+    action,
+    table_name: table,
+    target_id: targetId,
+    ip_address: ips[i % ips.length],
+    old_value: oldValue,
+    new_value: newValue,
+    created_at: new Date(timestamp).toISOString(),
+  };
+});
+

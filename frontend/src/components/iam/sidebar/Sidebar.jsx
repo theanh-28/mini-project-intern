@@ -1,4 +1,4 @@
-import { House, Users, BookText, ClipboardList } from 'lucide-react';
+import { House, Users, History, GitPullRequest, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 
@@ -10,8 +10,8 @@ import { PATHS } from '@/constants/routes';
 const MENU_ITEMS = [
     { icon: House, label: 'Home', path: PATHS.HOME },
     { icon: Users, label: 'Users', path: PATHS.ADMIN_USERS },
-    { icon: BookText, label: 'Requests', path: PATHS.REQUESTS },
-    { icon: ClipboardList, label: 'AUP', path: PATHS.AUP },
+    { icon: History, label: 'Audit Logs', path: PATHS.ADMIN_AUDIT_LOGS },
+    { icon: FileCheck, label: 'AUP', path: PATHS.AUP },
 ];
 
 export default function Sidebar({ collapsed }) {

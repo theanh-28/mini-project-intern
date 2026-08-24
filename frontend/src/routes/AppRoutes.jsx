@@ -10,6 +10,7 @@ import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import IAMLayout from '@/layouts/iam_layout/IAMLayout';
 import UsersPage from '@/pages/iam/users_page/UsersPage';
 import UserDetailPage from '@/pages/iam/users_page/UserDetailPage';
+import AuditLogsPage from '@/pages/iam/audit_logs_page/AuditLogsPage';
 
 import { PATHS } from '@/constants/routes';
 
@@ -31,6 +32,7 @@ export default function AppRoutes() {
         <Route element={<IAMLayout />}>
           <Route path={PATHS.ADMIN_USERS} element={<UsersPage />} />
           <Route path={`${PATHS.ADMIN_USERS}/:userId`} element={<UserDetailPage />}/>
+          <Route path={PATHS.ADMIN_AUDIT_LOGS} element={<AuditLogsPage />} />
         </Route>
       </Route>
 
